@@ -1,1 +1,18 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class BienvenidaJuego extends JFrame {
+
+    private JTextField nombreField;
+    private JComboBox<String> dificultadBox;
+    private JButton comenzarButton;
+    private JButton salirButton;
+
+    public BienvenidaJuego() {
+        setTitle("Bienvenida - Plantas vs Zombis");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
 
