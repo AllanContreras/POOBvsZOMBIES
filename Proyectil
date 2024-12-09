@@ -1,0 +1,71 @@
+import java.awt.Graphics;
+import java.awt.Image;
+import javax.swing.ImageIcon;
+import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
+
+public class Proyectil {
+    private int x, y;           // Posición del proyectil
+    private int velocidadX, velocidadY; // Velocidades en las direcciones X y Y
+    private int daño;           // Daño del proyectil
+    private Image imagen;       // Imagen del proyectil
+
+    // Constructor
+    public Proyectil(int x, int y, int velocidadX, int velocidadY, int daño, String rutaImagen) {
+        this.x = x;
+        this.y = y;
+        this.velocidadX = velocidadX;
+        this.velocidadY = velocidadY;
+        this.daño = daño;
+        this.imagen = new ImageIcon(rutaImagen).getImage(); // Cargar la imagen desde la ruta proporcionada
+    }
+
+    // Método para mover el proyectil
+    public void mover() {
+        x += velocidadX;  // Mueve el proyectil horizontalmente
+        y += velocidadY;  // Mueve el proyectil verticalmente
+    }
+
+    // Método para dibujar el proyectil en el panel
+    public void dibujar(Graphics g) {
+        g.drawImage(imagen, x, y, null);
+    }
+    public boolean colisionaCon(Zombie zombie) {
+        // Obtener dimensiones del proyectil
+        int width = imagen.getWidth(null);
+        int height = imagen.getHeight(null);
+
+        // Crear rectángulos de colisión
+        Rectangle proyectilBounds = new Rectangle(x, y, width, height);
+        Rectangle zombieBounds = new Rectangle(zombie.getX(), zombie.getY(), Zombie.ANCHO, Zombie.ALTURA);
+
+        // Verificar si hay colisión
+        if (proyectilBounds.intersects(zombieBounds)) {
+            // Quitar vida al zombie
+            zombie.recibirDaño(daño);
+            return true; // Indica que hubo colisión
+        }
+        return false;
+    }
+
+    // Obtener la posición X
+    public int getX() {
+        return x;
+    }
+
+    // Obtener la posición Y
+    public int getY() {
+        return y;
+    }
+
+    // Obtener el daño que causa el proyectil
+    public int getDaño() {
+        return daño;
+    }
+
+    // Comprobar si el proyectil está fuera de la pantalla
+    public boolean fueraDePantalla(int anchoPantalla, int altoPantalla) {
+        // Comprueba si el proyectil ha salido de la pantalla en cualquiera de las direcciones
+        return x < 0 || x > anchoPantalla || y < 0 || y > altoPantalla;
+    }
+}
