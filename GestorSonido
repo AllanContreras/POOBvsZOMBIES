@@ -1,0 +1,46 @@
+import javax.sound.sampled.*;
+import javax.swing.*;
+import java.io.File;
+import java.io.IOException;
+
+public class GestorSonido {
+    private Clip audioClip;
+
+    public void reproducirSonido(String rutaArchivo) {
+        try {
+            File archivoAudio = new File(rutaArchivo);
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(archivoAudio);
+            audioClip = AudioSystem.getClip();
+            audioClip.open(audioStream);
+            audioClip.loop(Clip.LOOP_CONTINUOUSLY);
+            audioClip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "No se pudo cargar el archivo de audio.");
+        }
+    }
+    private Clip currentClip;
+    private long clipTime;
+
+    public void pausarSonido() {
+        if (currentClip != null && currentClip.isRunning()) {
+            clipTime = currentClip.getMicrosecondPosition();
+            currentClip.stop();
+        }
+    }
+
+    public void reanudarSonido() {
+        if (currentClip != null) {
+            currentClip.setMicrosecondPosition(clipTime);
+            currentClip.start();
+        }
+    }
+
+
+    public void detenerSonido() {
+        if (audioClip != null && audioClip.isRunning()) {
+            audioClip.stop();
+            audioClip.close();
+        }
+    }
+}
