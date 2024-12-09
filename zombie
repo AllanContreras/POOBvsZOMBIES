@@ -1,0 +1,198 @@
+import java.awt.Image;
+import java.awt.Graphics;
+import javax.swing.ImageIcon;
+import javax.swing.Timer;
+import java.io.File;
+import java.awt.image.BufferedImage;
+
+
+/**
+ * Representa un zombie en el juego.
+ * Gestiona la posición, movimiento, salud y animación del zombie.
+ */
+public class Zombie {
+    private int x, y; // Coordenadas en píxeles
+    private int velocidadX, velocidadY;
+    private ImageIcon[] framesAnimacion;
+    private String nombre;
+    private int salud;
+    private int frameActual = 0;
+    private int contadorAnimacion = 0;
+    public static final int ALTURA = 50;
+    public static final int ANCHO = 50; // Para calcular columna
+    private Timer timerMovimiento;
+
+    // Nuevos atributos
+    private int fila; // Fila lógica en el tablero
+    private int columna; // Columna lógica en el tablero
+
+    public Zombie(String nombre, int salud, int x, int y) {
+        this.nombre = nombre;
+        this.x = x;
+        this.y = y;
+        this.velocidadX = 0;
+        this.velocidadY = 0;
+        this.salud = salud;
+        this.fila = -1; // Sin asignar
+        this.columna = -1; // Sin asignar
+        cargarFramesAnimacion();
+    }
+
+    private void cargarFramesAnimacion() {
+        framesAnimacion = new ImageIcon[4];
+        String rutaBase = "src\\IMG\\";
+        String rutaFrames;
+
+        // Validar que el nombre no sea nulo
+        if (nombre == null) {
+            System.err.println("Nombre del zombie es nulo. Usando zombie por defecto.");
+            nombre = "ZombieBasico"; // Valor por defecto
+        }
+
+        // Seleccionar ruta de frames según el tipo de zombie
+        switch (nombre) {
+            case "ZombieBasico":
+                rutaFrames = rutaBase + "Zombie_frame%d.png";
+                break;
+            case "zombieCono":
+                rutaFrames = rutaBase + "zombieCono_frame%d.png";
+                break;
+            case "zombieCubeta":
+                rutaFrames = rutaBase + "zombieCubeta_frame%d.png";
+                break;
+            case "zombieCerebro":
+                rutaFrames = rutaBase + "zombieCerebro_frame%d.png";
+                break;
+            case "eciZombie":
+                rutaFrames = rutaBase + "eciZombie_frame%d.png";
+                break;
+            default:
+                rutaFrames = rutaBase + "zombie_frame%d.png";
+        }
+
+        for (int i = 0; i < framesAnimacion.length; i++) {
+            try {
+                String rutaFrame = String.format(rutaFrames, i);
+                File archivoFrame = new File(rutaFrame);
+
+                // Verificar si el archivo existe
+                if (!archivoFrame.exists()) {
+                    System.err.println("Archivo de imagen no encontrado: " + rutaFrame);
+                    // Usar una imagen de respaldo o un placeholder
+                    framesAnimacion[i] = null;
+                    continue;
+                }
+
+                ImageIcon originalIcon = new ImageIcon(rutaFrame);
+                Image imagenEscalada = originalIcon.getImage().getScaledInstance(ANCHO, ALTURA, Image.SCALE_SMOOTH);
+                framesAnimacion[i] = new ImageIcon(imagenEscalada);
+            } catch (Exception e) {
+                System.err.println("Error al cargar el frame " + i + " del zombie: " + e.getMessage());
+                framesAnimacion[i] = null;
+            }
+        }
+
+        // Verificar si todos los frames son nulos
+        boolean todosNulos = true;
+        for (ImageIcon frame : framesAnimacion) {
+            if (frame != null) {
+                todosNulos = false;
+                break;
+            }
+        }
+
+        if (todosNulos) {
+            System.err.println("No se pudieron cargar los frames para el zombie: " + nombre);
+            // Cargar un frame por defecto o generar un frame básico
+            framesAnimacion[0] = new ImageIcon(new BufferedImage(ANCHO, ALTURA, BufferedImage.TYPE_INT_ARGB));
+        }
+    }
+
+    public void iniciarMovimiento(int delay, int anchoPanel) {
+        timerMovimiento = new Timer(delay, e -> {
+            mover();
+            if (haLlegadoAlFinal(anchoPanel)) {
+                detenerMovimiento();
+            }
+        });
+        timerMovimiento.start();
+    }
+
+    public void detenerMovimiento() {
+        if (timerMovimiento != null) {
+            timerMovimiento.stop();
+        }
+    }
+
+    public void mover() {
+        x += velocidadX;
+        y += velocidadY;
+        contadorAnimacion++;
+        if (contadorAnimacion >= 10) {
+            frameActual = (frameActual + 1) % framesAnimacion.length;
+            contadorAnimacion = 0;
+        }
+
+        // Actualizar fila y columna lógica según la posición
+        actualizarFilaColumna();
+    }
+
+    private void actualizarFilaColumna() {
+        this.fila = y / ALTURA; // Asume celdas cuadradas
+        this.columna = x / ANCHO; // Basado en posición x
+    }
+
+    public boolean haLlegadoAlFinal(int anchoPanel) {
+        return x <= 0;
+    }
+
+    public void dibujar(Graphics g) {
+        if (framesAnimacion != null && framesAnimacion[frameActual] != null) {
+            g.drawImage(framesAnimacion[frameActual].getImage(), x, y, null);
+        }
+    }
+
+    public void recibirDaño(int daño) {
+        salud -= daño;
+        if (salud <= 0) {
+            morir();
+        }
+    }
+
+    private void morir() {
+        System.out.println("¡El zombi ha muerto!");
+    }
+
+    public void setVelocidadX(int velocidad) {
+        this.velocidadX = velocidad;
+    }
+
+    // Métodos para obtener fila, columna e icono
+    public int getFila() {
+        return fila;
+    }
+
+    public int getColumna() {
+        return columna;
+    }
+
+    public ImageIcon getIcono() {
+        return framesAnimacion[frameActual];
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public int getSalud() {
+        return salud;
+    }
+
+    public void setSalud(int salud) {
+        this.salud = salud;
+    }
+}
