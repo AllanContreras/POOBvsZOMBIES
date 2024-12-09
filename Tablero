@@ -1,1 +1,270 @@
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+import java.io.File;
 
+public class Tablero extends JFrame {
+    public JPanel[][] celdas;
+    public GestorZombies gestorZombies;
+    public GestorPlantas gestorPlantas;
+    private GestorSonido gestorSonido;
+    private PoobvsZombies PoobvsZombies;
+
+    private List<String> personajesDisponibles;
+    private JPanel panelPersonajes;
+    private boolean plantaSeleccionada = false;
+    private String tipoPlantaSeleccionada = null;
+    private Color colorOriginalCelda;
+
+    public Tablero(int filas, int columnas, List<String> personajes) {
+        try {
+            this.personajesDisponibles = personajes;
+            // Crea gestorUI primero
+            PoobvsZombies = new PoobvsZombies(this, filas, columnas, personajesDisponibles);
+
+
+            configurarVentana(filas, columnas);
+            inicializarComponentes(filas, columnas);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al inicializar el tablero: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    public void agregarPodadora(int fila, int columna) {
+        try {
+            // Ruta de la imagen de la podadora
+            String rutaPodadora = "src\\IMG\\Podadora1.png";
+            File archivoPodadora = new File(rutaPodadora);
+
+            if (!archivoPodadora.exists()) {
+                System.err.println("Archivo de imagen no encontrado: " + archivoPodadora.getAbsolutePath());
+                return; // Salir si la imagen no existe
+            }
+
+            // Cargar y escalar la imagen de la podadora
+            ImageIcon podadoraIcon = new ImageIcon(archivoPodadora.getAbsolutePath());
+            Image scaledImage = podadoraIcon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+            JLabel podadoraLabel = new JLabel(new ImageIcon(scaledImage));
+
+            // Configurar el JLabel para la podadora
+            podadoraLabel.setHorizontalAlignment(JLabel.CENTER);
+            podadoraLabel.setVerticalAlignment(JLabel.CENTER);
+
+            // Agregar la podadora a la celda
+            celdas[fila][columna].removeAll(); // Limpiar componentes existentes
+            celdas[fila][columna].add(podadoraLabel, BorderLayout.CENTER);
+            celdas[fila][columna].revalidate();
+            celdas[fila][columna].repaint();
+
+            System.out.println("Podadora agregada en celda: (" + fila + ", " + columna + ")");
+        } catch (Exception e) {
+            System.err.println("Error al agregar podadora en celda (" + fila + ", " + columna + "): " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+    private void configurarVentana(int filas, int columnas) {
+        setTitle("Tablero ");
+        setSize(900, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+    }
+
+    public void inicializarComponentes(int filas, int columnas) {
+        celdas = new JPanel[filas][columnas];
+        setLayout(new GridLayout(filas, columnas));
+
+        // Inicializar las celdas
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
+                celdas[i][j] = new JPanel();
+                celdas[i][j].setLayout(new BorderLayout()); // Para apilar componentes
+                celdas[i][j].setPreferredSize(new Dimension(50, 50));
+                celdas[i][j].setBorder(BorderFactory.createLineBorder(Color.BLACK));
+
+                if (j == 0) { // Solo para la primera columna
+                    agregarPodadora(i, j); // Método separado para agregar podadoras
+                }
+
+
+
+                // Fondo
+                JLabel fondo = new JLabel();
+                fondo.setOpaque(true);
+                fondo.setBackground(Color.GREEN);
+                celdas[i][j].add(fondo);
+
+                // Zombie
+                JLabel zombie = new JLabel();
+                celdas[i][j].add(zombie);
+
+                // Planta
+                JLabel planta = new JLabel();
+                celdas[i][j].add(planta);
+
+                add(celdas[i][j]);
+            }
+        }
+
+
+
+
+        // Inicializar gestores
+        gestorSonido = new GestorSonido();
+        gestorZombies = new GestorZombies(celdas, this);
+        gestorPlantas = new GestorPlantas(celdas, this);
+        PoobvsZombies = new PoobvsZombies(this, filas, columnas, personajesDisponibles);
+
+        // Crear panel principal desde GestorUI
+        JPanel mainPanel = PoobvsZombies.crearPanelPrincipal(celdas);
+
+        // Asegurarse de que el tablero está correctamente agregado
+        setContentPane(mainPanel);
+        mainPanel.revalidate();
+        mainPanel.repaint();
+
+        gestorZombies.generarZombiesIniciales(filas);
+
+        reproducirSonidoFondo();
+
+        setVisible(true);
+
+
+    }
+    // Método público para acceder a las celdas
+    public JPanel[][] getCeldas() {
+        return celdas;
+    }
+
+
+
+
+
+    private void reproducirSonidoFondo() {
+        gestorSonido.reproducirSonido("src\\sounds\\Dia.wav");
+    }
+
+    public void manejarSeleccionPlanta(String personaje, JPanel panel) {
+        plantaSeleccionada = true;
+        tipoPlantaSeleccionada = personaje;
+        PoobvsZombies.resaltarPanelSeleccionado(panel);
+        setCursor(new Cursor(Cursor.HAND_CURSOR));
+        System.out.println("Planta seleccionada: " + tipoPlantaSeleccionada);
+    }
+
+
+
+
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+
+        for (int i = 0; i < celdas.length; i++) {
+            for (int j = 0; j < celdas[i].length; j++) {
+                JLabel zombieLabel = (JLabel) celdas[i][j].getComponent(0);
+                ImageIcon iconoZombie = gestorZombies.obtenerIconoZombie(i, j);
+
+                if (iconoZombie != null) {
+                    zombieLabel.setIcon(iconoZombie);
+                    celdas[i][j].revalidate();
+                    celdas[i][j].repaint();
+                } else {
+                    zombieLabel.setIcon(null); // Limpiar si no hay zombi
+                }
+            }
+        }
+    }
+
+
+
+    @Override
+    public void dispose() {
+        gestorZombies.detener();
+        gestorPlantas.detener();
+        gestorSonido.detenerSonido();
+        super.dispose();
+    }
+
+
+
+    // Métodos de manejo de eventos y colocación de plantas
+    public void colocarPlanta(int fila, int columna) {
+        // Verificación de estado
+        System.out.println("Estado al colocar planta:");
+        System.out.println("plantaSeleccionada: " + PoobvsZombies.isPlantaSeleccionada());
+        System.out.println("tipoPlantaSeleccionada: " + PoobvsZombies.getTipoPlantaSeleccionada());
+
+        // Verificar si la columna es la primera (índice 0)
+        if (columna == 0) {
+            JOptionPane.showMessageDialog(this, "No puedes colocar plantas en la primera columna. Esta columna está reservada para las podadoras.",
+                    "Columna Protegida", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        if (PoobvsZombies.isPlantaSeleccionada() && PoobvsZombies.getTipoPlantaSeleccionada() != null) {
+            String tipoPlanta = PoobvsZombies.getTipoPlantaSeleccionada();
+            Planta planta = crearPlantaSegunTipo(tipoPlanta);
+
+            if (planta == null) {
+                System.out.println("Error: No se pudo crear la planta.");
+                return;
+            }
+
+            gestorPlantas.agregarPlanta(fila, columna, planta);
+            PoobvsZombies.resetearSeleccion();
+        } else {
+            System.out.println("Error: Planta no seleccionada o tipo es null.");
+        }
+    }
+
+
+
+
+
+
+    public void reiniciarEstadoSeleccionPlanta() {
+        plantaSeleccionada = false;
+        tipoPlantaSeleccionada = null;
+        setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        PoobvsZombies.reiniciarResaltadoPersonajes();
+    }
+
+    private Planta crearPlantaSegunTipo(String tipo) {
+        String rutaImagen = obtenerRutaImagenPersonaje(tipo);
+        if (rutaImagen == null) {
+            System.out.println("Error: No se encontró la ruta de imagen para el personaje: " + tipo);
+            return null;
+        }
+
+        // Parámetros específicos para cada tipo de planta
+        switch(tipo) {
+            case "Girasol":
+                return new Planta(rutaImagen, 50, 0, 50);  // Vida, daño, costo
+            case "Nuez":
+                return new Planta(rutaImagen, 200, 0, 50);
+            case "PapaMina":
+                return new Planta(rutaImagen, 75, 20, 50);
+            case "EciPlanta":
+                return new Planta(rutaImagen, 100, 15, 75);
+            case "Planta":
+            default:
+                return new Planta(rutaImagen, 100, 10, 50);
+        }
+    }
+
+
+    private String obtenerRutaImagenPersonaje(String personaje) {
+        // Lógica para obtener ruta de imagen similar a la implementación original
+        return switch(personaje) {
+            case "Girasol" -> "src\\IMG\\Girasol.png";
+            case "Planta" -> "src\\IMG\\Planta.png";
+            case "Nuez" -> "src\\IMG\\Nuez.png";
+            case "PapaMina" -> "src\\IMG\\papaMina.png";
+            case "EciPlanta" -> "src\\IMG\\EciPlanta.png";
+            default -> null;
+        };
+    }
+}
