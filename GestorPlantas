@@ -1,0 +1,183 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
+
+public class GestorPlantas {
+    private Map<Point, Boolean> plantasColocadas;
+    private Map<Point, Timer> plantaAnimaciones;
+    private Map<Point, Timer> plantaDisparos;
+    private Map<Point, Integer> plantaFrames;
+    private JPanel[][] celdas;
+    private JFrame contenedor;
+
+    public GestorPlantas(JPanel[][] celdas, JFrame contenedor) {
+        this.celdas = celdas;
+        this.contenedor = contenedor;
+        plantasColocadas = new HashMap<>();
+        plantaAnimaciones = new HashMap<>();
+        plantaDisparos = new HashMap<>();
+        plantaFrames = new HashMap<>();
+    }
+
+    public void agregarPlanta(int fila, int columna, Planta planta) {
+        Point posicion = new Point(fila, columna);
+
+        // Verificar si ya hay una planta
+        if (plantasColocadas.containsKey(posicion) && plantasColocadas.get(posicion)) {
+            JOptionPane.showMessageDialog(contenedor, "Ya hay una planta en esta posición.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JPanel cell = celdas[fila][columna];
+
+        // Asegúrate de usar el índice correcto para el label de planta
+        JLabel plantLabel = (JLabel) cell.getComponent(2);  // Componente de planta
+
+        // Escalar imagen si es necesario
+        ImageIcon imagen = planta.getImagen();
+        Image scaledImage = imagen.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+        plantLabel.setIcon(new ImageIcon(scaledImage));
+
+        plantasColocadas.put(posicion, true);
+        plantaFrames.put(posicion, 0);
+
+        iniciarAnimacionPlanta(fila, columna, planta);
+        iniciarDisparoAutomatico(fila, columna);
+    }
+    public void reiniciar() {
+        }
+
+
+
+    public void iniciarDisparoAutomatico(int fila, int columna) {
+        Point posicion = new Point(fila, columna);
+
+        if (plantaDisparos.containsKey(posicion)) {
+            plantaDisparos.get(posicion).stop();
+        }
+
+        Timer timerDisparo = new Timer(1500, e -> {
+            if (!plantasColocadas.containsKey(posicion)) {
+                ((Timer) e.getSource()).stop();
+                return;
+            }
+            dispararProyectil(fila, columna);
+        });
+
+        plantaDisparos.put(posicion, timerDisparo);
+        timerDisparo.start();
+    }
+
+    private void iniciarAnimacionPlanta(int fila, int columna, Planta planta) {
+        Point posicion = new Point(fila, columna);
+
+        if (plantaAnimaciones.containsKey(posicion)) {
+            plantaAnimaciones.get(posicion).stop();
+        }
+
+        ImageIcon[] frames = planta.getFrames();
+
+        Timer timer = new Timer(350, e -> {
+            if (!plantasColocadas.containsKey(posicion)) {
+                ((Timer) e.getSource()).stop();
+                return;
+            }
+
+            JLabel plantLabel = (JLabel) celdas[fila][columna].getComponent(1);
+            int currentFrame = plantaFrames.get(posicion);
+            plantLabel.setIcon(frames[currentFrame]);
+            currentFrame = (currentFrame + 1) % frames.length;
+            plantaFrames.put(posicion, currentFrame);
+        });
+
+        plantaAnimaciones.put(posicion, timer);
+        timer.start();
+    }
+
+    public void dispararProyectil(int fila, int columnaInicial) {
+        if (fila < 0 || fila >= celdas.length || columnaInicial < 0 || columnaInicial >= celdas[0].length) {
+            return;
+        }
+
+        ImageIcon proyectilIcon = new ImageIcon("src\\IMG\\Proyectil.png");
+        Image proyectilImage = proyectilIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        ImageIcon proyectilScaled = new ImageIcon(proyectilImage);
+
+        int columnaStart = columnaInicial + 1;
+        if (columnaStart >= celdas[0].length) return;
+
+        final int[] columnaActual = {columnaStart};
+
+        Timer timer = new Timer(100, e -> {
+            // Limpiar el proyectil de la columna anterior
+            if (columnaActual[0] > columnaInicial + 1) {
+                JLabel labelAnterior = (JLabel) celdas[fila][columnaActual[0] - 1].getComponent(1);
+                labelAnterior.setIcon(null);
+            }
+
+            // Verificar límites del tablero
+            if (columnaActual[0] >= celdas[0].length) {
+                ((Timer) e.getSource()).stop();
+                return;
+            }
+
+            // Colocar el proyectil en la nueva columna
+            JLabel labelActual = (JLabel) celdas[fila][columnaActual[0]].getComponent(1);
+            labelActual.setIcon(proyectilScaled);
+
+            columnaActual[0]++;
+        });
+
+        timer.start();
+    }
+    private boolean existePlanta(int fila, int columna) {
+        Point posicion = new Point(fila, columna);
+        return plantasColocadas.containsKey(posicion) && plantasColocadas.get(posicion);
+    }
+
+    public void removerPlanta(int fila, int columna) {
+        Point posicion = new Point(fila, columna);
+
+        if (plantasColocadas.containsKey(posicion) && plantasColocadas.get(posicion)) {
+            // Detener timers
+            if (plantaAnimaciones.containsKey(posicion)) {
+                plantaAnimaciones.get(posicion).stop();
+                plantaAnimaciones.remove(posicion);
+            }
+
+            if (plantaDisparos.containsKey(posicion)) {
+                plantaDisparos.get(posicion).stop();
+                plantaDisparos.remove(posicion);
+            }
+
+            // Limpiar la celda
+            JPanel cell = celdas[fila][columna];
+            JLabel plantLabel = (JLabel) cell.getComponent(1);
+            plantLabel.setIcon(null);
+
+            // Marcar como no ocupada
+            plantasColocadas.remove(posicion);
+            plantaFrames.remove(posicion);
+
+            cell.revalidate();
+            cell.repaint();
+        } else {
+            JOptionPane.showMessageDialog(contenedor, "No hay una planta en esta posición.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void detener() {
+        for (Timer timer : plantaDisparos.values()) {
+            timer.stop();
+        }
+        plantaDisparos.clear();
+
+        for (Timer timer : plantaAnimaciones.values()) {
+            timer.stop();
+        }
+        plantaAnimaciones.clear();
+    }
+}
