@@ -1,0 +1,279 @@
+import javax.sound.sampled.*;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.io.File;
+import java.io.IOException;
+
+public class SeleccionModo extends JFrame {
+
+    public Clip audioClip;
+
+    public SeleccionModo(JFrame ventanaPrincipal) {
+        setTitle("Seleccionar Modo");
+        setSize(800, 500);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Fondo personalizado
+        ImageIcon backgroundImage = new ImageIcon("src\\IMG\\Niveles.jpg");
+        JPanel fondoPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+            }
+        };
+        fondoPanel.setLayout(null);
+
+        // Botón Volver
+        JButton volverButton = new JButton("Volver");
+        volverButton.setBounds(10, 10, 100, 30);
+        volverButton.setForeground(Color.WHITE);
+        volverButton.setContentAreaFilled(false);
+        volverButton.setBorderPainted(false);
+        volverButton.addActionListener(e -> {
+            if (audioClip != null && audioClip.isRunning()) {
+                audioClip.stop();
+            }
+            ventanaPrincipal.setVisible(true);
+            dispose();
+        });
+        fondoPanel.add(volverButton);
+
+        // Botones de niveles
+        JButton JvsMButton = new JButton("JugadorVSMaquina");
+        JButton JvsJButton = new JButton("JugadorVSJugador");
+        JButton MvsMButton = new JButton("MaquinaVSMaquina");
+
+        JvsMButton.setBounds(115, 180, 200, 50);
+        JvsJButton.setBounds(291, 180, 200, 50);
+        MvsMButton.setBounds(475, 180, 200, 50);
+
+        JButton[] botones = {JvsMButton, JvsJButton, MvsMButton};
+        for (JButton boton : botones) {
+            boton.setForeground(Color.WHITE);
+            boton.setContentAreaFilled(false);
+            boton.setBorderPainted(false);
+            fondoPanel.add(boton);
+        }
+
+        // Acción para cada nivel
+        JvsMButton.addActionListener(e -> {
+            if (audioClip != null && audioClip.isRunning()) {
+                audioClip.stop();
+            }
+            new SeleccionPersonajes(this, "JvsM");
+            setVisible(false);
+        });
+
+        JvsJButton.addActionListener(e -> {
+            if (audioClip != null && audioClip.isRunning()) {
+                audioClip.stop();
+            }
+            new SeleccionPersonajes(this, "JvsJ");
+            setVisible(false);
+        });
+        MvsMButton.addActionListener(e -> {
+            if (audioClip != null && audioClip.isRunning()) {
+                audioClip.stop();
+            }
+            new SeleccionPersonajes(this, "MvsM");
+            setVisible(false);
+        });
+        add(fondoPanel);
+
+        // Reproducir música
+        reproducirMusica("src\\sounds\\Theme.wav");
+
+        setVisible(true);
+    }
+
+    public void reproducirMusica(String rutaArchivo) {
+        try {
+            File archivoAudio = new File(rutaArchivo);
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(archivoAudio);
+            audioClip = AudioSystem.getClip();
+            audioClip.open(audioStream);
+            audioClip.loop(Clip.LOOP_CONTINUOUSLY);
+            audioClip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "No se pudo cargar el archivo de audio.");
+        }
+    }
+}
+
+class SeleccionPersonajes extends JFrame {
+
+
+    private List<String> personajesSeleccionados;
+    public Clip audioClip;
+
+    public SeleccionPersonajes(JFrame ventanaAnterior, String nivelSeleccionado) {
+        setTitle("Seleccionar Personajes");
+        setSize(800, 500);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        personajesSeleccionados = new ArrayList<>();
+
+        // Fondo personalizado con oscurecimiento
+        ImageIcon backgroundImage = new ImageIcon("src\\IMG\\fondo_personajes.jpg");
+        JPanel fondoPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+
+                // Dibujar la imagen de fondo
+                g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+
+                // Dibujar un rectángulo semitransparente para oscurecer
+                Color overlayColor = new Color(0, 0, 0, 150); // Negro con 150 de transparencia
+                g.setColor(overlayColor);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        fondoPanel.setLayout(null);
+
+        JLabel titulo = new JLabel("Selecciona tus personajes para  " + nivelSeleccionado, SwingConstants.CENTER);
+        titulo.setFont(new Font("Arial", Font.BOLD, 18));
+        titulo.setForeground(Color.WHITE);
+        titulo.setBounds(200, 20, 400, 30);
+        fondoPanel.add(titulo);
+
+        // Panel para personajes
+        JPanel personajesPanel = new JPanel();
+        personajesPanel.setBounds(50, 100, 700, 250);
+        personajesPanel.setOpaque(false); // Hacer transparente para fondo
+        personajesPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20)); // Espaciado entre personajes
+
+        // Personajes e imágenes
+        String[] personajes = {"Girasol", "Planta", "Nuez", "PapaMina", "EciPlanta"};
+        String[] imagenes = {
+                "src\\IMG\\Girasol.png",
+                "src\\IMG\\Planta.png",
+                "src\\IMG\\Nuez.png",
+                "src\\IMG\\papaMina.png",
+                "src\\IMG\\EciPlanta.png"
+        };
+
+        for (int i = 0; i < personajes.length; i++) {
+            String personaje = personajes[i];
+            String imagenPath = imagenes[i];
+
+            // Crear un panel con diseño personalizado
+            JPanel personajePanel = new RoundedPanel(20, new Color(255, 255, 255, 100));
+            personajePanel.setLayout(new BorderLayout());
+            personajePanel.setPreferredSize(new Dimension(120, 150)); // Tamaño del cuadro
+            personajePanel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+            // Imagen del personaje (redimensionada)
+            ImageIcon originalIcon = new ImageIcon(imagenPath);
+            Image imagenEscalada = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+            JLabel imagenLabel = new JLabel(new ImageIcon(imagenEscalada));
+            imagenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            // Nombre del personaje
+            JLabel nombreLabel = new JLabel(personaje, SwingConstants.CENTER);
+            nombreLabel.setForeground(Color.BLACK);
+            nombreLabel.setFont(new Font("Arial", Font.BOLD, 14));
+
+            personajePanel.add(imagenLabel, BorderLayout.CENTER);
+            personajePanel.add(nombreLabel, BorderLayout.SOUTH);
+
+            // Selección visual
+            personajePanel.addMouseListener(new MouseAdapter() {
+                private boolean seleccionado = false;
+
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (!seleccionado) {
+                        personajesSeleccionados.add(personaje);
+                        personajePanel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 4)); // Borde verde
+                        seleccionado = true;
+                    } else {
+                        personajesSeleccionados.remove(personaje);
+                        personajePanel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2)); // Borde blanco
+                        seleccionado = false;
+                    }
+
+                    personajePanel.repaint();
+                    personajePanel.revalidate();
+                }
+            });
+
+            personajesPanel.add(personajePanel); // Añadir al panel principal
+        }
+
+        fondoPanel.add(personajesPanel);
+
+        // Botón confirmar
+        JButton confirmarButton = new JButton("Confirmar");
+        confirmarButton.setBounds(300, 400, 200, 40);
+        confirmarButton.addActionListener(e -> {
+            if (!personajesSeleccionados.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Has seleccionado: " + personajesSeleccionados);
+                // Ir al Tablero
+                new Tablero(5, 12, personajesSeleccionados);
+
+                detenerMusica();
+                dispose();
+            } else {
+                JOptionPane.showMessageDialog(this, "Por favor selecciona al menos un personaje.");
+            }
+        });
+        fondoPanel.add(confirmarButton);
+
+        add(fondoPanel);
+
+        // Reproducir música
+        reproducirMusica("src\\sounds\\Theme.wav");
+
+        setVisible(true);
+    }
+
+    public void reproducirMusica(String rutaArchivo) {
+        try {
+            File archivoAudio = new File(rutaArchivo);
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(archivoAudio);
+            audioClip = AudioSystem.getClip();
+            audioClip.open(audioStream);
+            audioClip.loop(Clip.LOOP_CONTINUOUSLY);
+            audioClip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "No se pudo cargar el archivo de audio.");
+        }
+    }
+
+    public void detenerMusica() {
+        if (audioClip != null && audioClip.isRunning()) {
+            audioClip.stop();
+        }
+    }
+
+    // Clase para crear paneles con esquinas redondeadas
+    static class RoundedPanel extends JPanel {
+        private int cornerRadius;
+        private Color backgroundColor;
+
+        public RoundedPanel(int radius, Color bgColor) {
+            this.cornerRadius = radius;
+            this.backgroundColor = bgColor;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(backgroundColor);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
+        }
+    }
+}
