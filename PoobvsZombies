@@ -1,0 +1,269 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+public class PoobvsZombies {
+    private JPanel panelPersonajes;
+    private JFrame contenedor;
+    private List<String> personajesDisponibles;
+    private String personajeSeleccionado;
+    private boolean plantaSeleccionada = false;
+    private String tipoPlantaSeleccionada = null;
+
+    public PoobvsZombies(JFrame contenedor, int filas, int columnas, List<String> personajes) {
+        this.contenedor = contenedor;
+        this.personajesDisponibles = personajes;
+        this.personajeSeleccionado = personajes.get(0);
+
+    }
+    public JPanel crearPanelPrincipal(JPanel[][] celdas) {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+
+
+        // Panel de personajes
+        JPanel personajesPanel = crearPanelPersonajes(null);
+        mainPanel.add(personajesPanel, BorderLayout.NORTH);
+
+
+        // Panel del tablero
+        JPanel tableroPanel = crearPanelTablero(celdas);
+        mainPanel.add(tableroPanel, BorderLayout.CENTER);
+
+        return mainPanel;
+    }
+
+    public JPanel crearPanelTablero(JPanel[][] celdas) {
+        JPanel tableroPanel = new JPanel(new GridLayout(celdas.length, celdas[0].length));
+        tableroPanel.setBackground(new Color(20, 80, 20)); // Fondo oscuro entre celdas
+
+        for (int i = 0; i < celdas.length; i++) {
+            for (int j = 0; j < celdas[i].length; j++) {
+                JPanel cell = new JPanel();
+                cell.setLayout(new OverlayLayout(cell));
+                // Borde personalizado con sombras
+                cell.setBorder(BorderFactory.createMatteBorder(
+                        1, // top
+                        1, // left
+                        1, // bottom
+                        1, // right
+                        new Color(30, 90, 30) // color del borde
+                ));
+
+                // Efecto de sombreado suave
+                cell.setOpaque(true);
+                cell.setBackground(new Color(25, 100, 25));
+
+                // Capas: Fondo, Planta, Proyectil, Zombi
+                JLabel fondoLabel = new JLabel(cargarImagen("src\\IMG\\fondo_tablero.jpg"));
+                fondoLabel.setAlignmentX(0.5f);
+                fondoLabel.setAlignmentY(0.5f);
+
+                JLabel plantaLabel = new JLabel();
+                plantaLabel.setAlignmentX(0.5f);
+                plantaLabel.setAlignmentY(0.5f);
+
+                JLabel proyectilLabel = new JLabel();
+                proyectilLabel.setAlignmentX(0.5f);
+                proyectilLabel.setAlignmentY(0.5f);
+
+                JLabel zombieLabel = new JLabel();
+                zombieLabel.setAlignmentX(0.5f);
+                zombieLabel.setAlignmentY(0.5f);
+
+                // Añadir capas en orden
+                cell.add(zombieLabel);
+                cell.add(proyectilLabel);
+                cell.add(plantaLabel);
+                cell.add(fondoLabel);
+
+                // Configurar eventos de clic
+                int fila = i, columna = j;
+                cell.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        System.out.println("Clic en celda: plantaSeleccionada = " + plantaSeleccionada
+                                + ", tipoPlantaSeleccionada = " + tipoPlantaSeleccionada);
+
+                        if (plantaSeleccionada && tipoPlantaSeleccionada != null) {
+                            ((Tablero) contenedor).colocarPlanta(fila, columna);
+                        } else {
+                            System.out.println("No hay planta seleccionada o tipo es null.");
+                        }
+                    }
+                });
+
+
+                celdas[i][j] = cell;
+                tableroPanel.add(cell);
+            }
+        }
+
+        return tableroPanel;
+    }
+    public ImageIcon cargarImagen(String ruta) {
+        try {
+            return new ImageIcon(ruta);
+        } catch (Exception e) {
+            System.out.println("No se pudo cargar la imagen: " + ruta);
+            return null; // Devuelve null si no se encuentra la imagen
+        }
+    }
+
+
+    public JPanel crearPanelPersonajes(ActionListener agregarPlantaListener) {
+        panelPersonajes = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        panelPersonajes.setBackground(new Color(40, 40, 40));
+        panelPersonajes.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+        for (String personaje : personajesDisponibles) {
+            JPanel btnPanel = crearPanelPersonaje(personaje, agregarPlantaListener);
+            panelPersonajes.add(btnPanel);
+        }
+
+        return panelPersonajes;
+    }
+
+    private JPanel crearPanelPersonaje(String personaje, ActionListener agregarPlantaListener) {
+        JPanel btnPanel = new JPanel();
+        btnPanel.setPreferredSize(new Dimension(60, 70));
+        btnPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        btnPanel.setBackground(new Color(50, 50, 50));
+
+        agregarImagenPersonaje(btnPanel, personaje);
+        agregarNombrePersonaje(btnPanel, personaje);
+
+        btnPanel.addMouseListener(crearListenerPersonaje(personaje, btnPanel, agregarPlantaListener));
+        return btnPanel;
+    }
+
+    private void agregarImagenPersonaje(JPanel btnPanel, String personaje) {
+        String rutaImagen = obtenerRutaImagenPersonaje(personaje);
+        if (rutaImagen != null) {
+            ImageIcon icon = new ImageIcon(rutaImagen);
+            Image img = icon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+            JLabel imageLabel = new JLabel(new ImageIcon(img));
+            imageLabel.setHorizontalAlignment(JLabel.CENTER);
+            btnPanel.add(imageLabel);
+        }
+    }
+
+    private void agregarNombrePersonaje(JPanel btnPanel, String personaje) {
+        JLabel nameLabel = new JLabel(personaje);
+        nameLabel.setForeground(Color.WHITE);
+        nameLabel.setHorizontalAlignment(JLabel.CENTER);
+        nameLabel.setFont(new Font("Arial", Font.PLAIN, 9));
+        btnPanel.add(nameLabel);
+    }
+
+    private MouseListener crearListenerPersonaje(String personaje, JPanel panel, ActionListener agregarPlantaListener) {
+        return new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                plantaSeleccionada = true;
+                tipoPlantaSeleccionada = personaje; // Ahora accesible
+                resaltarPanelSeleccionado(panel);
+                contenedor.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                System.out.println("Planta seleccionada: " + tipoPlantaSeleccionada); // Debug
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                panel.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (!personaje.equals(tipoPlantaSeleccionada)) {
+                    panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+                }
+            }
+        };
+    }
+
+
+
+
+
+    public void resaltarPanelSeleccionado(JPanel panelSeleccionado) {
+        for (Component comp : panelPersonajes.getComponents()) {
+            if (comp instanceof JPanel) {
+                ((JPanel) comp).setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            }
+        }
+        panelSeleccionado.setBorder(BorderFactory.createLineBorder(Color.GREEN, 2));
+    }
+    public void reiniciarResaltadoPersonajes() {
+        for (Component comp : panelPersonajes.getComponents()) {
+            if (comp instanceof JPanel) {
+                ((JPanel) comp).setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            }
+        }
+    }
+    public void configurarManejadorPersonajes(BiConsumer<String, JPanel> manejador) {
+        for (Component comp : panelPersonajes.getComponents()) {
+            if (comp instanceof JPanel) {
+                JPanel panelPersonaje = (JPanel) comp;
+
+                panelPersonaje.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        String personaje = obtenerNombrePersonaje(panelPersonaje); // Obtén el personaje asociado al panel
+                        if (personaje != null) {
+                            plantaSeleccionada = true;
+                            tipoPlantaSeleccionada = personaje;
+                            resaltarPanelSeleccionado(panelPersonaje);
+                            contenedor.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                            System.out.println("Planta seleccionada: " + tipoPlantaSeleccionada); // Debug
+                            manejador.accept(personaje, panelPersonaje); // Notifica al manejador
+                        } else {
+                            System.out.println("Error: No se pudo identificar el personaje.");
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+
+
+    private String obtenerNombrePersonaje(JPanel panel) {
+        for (Component comp : panel.getComponents()) {
+            if (comp instanceof JLabel) {
+                return ((JLabel) comp).getText();
+            }
+        }
+        return null;
+    }
+
+    public String obtenerRutaImagenPersonaje(String personaje) {
+        Map<String, String> rutasImagenes = new HashMap<>();
+        rutasImagenes.put("Girasol", "src\\IMG\\Girasol.png");
+        rutasImagenes.put("Planta", "src\\IMG\\Planta.png");
+        rutasImagenes.put("Nuez", "src\\IMG\\Nuez.png");
+        rutasImagenes.put("PapaMina", "src\\IMG\\papaMina.png");
+        rutasImagenes.put("EciPlanta", "src\\IMG\\EciPlanta.png");
+
+        return rutasImagenes.get(personaje);
+    }
+
+    public boolean isPlantaSeleccionada() {
+        return plantaSeleccionada;
+    }
+
+    public String getTipoPlantaSeleccionada() {
+        return tipoPlantaSeleccionada;
+    }
+
+    public void resetearSeleccion() {
+        plantaSeleccionada = false;
+        tipoPlantaSeleccionada = null;
+        contenedor.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        reiniciarResaltadoPersonajes();
+    }
+}
