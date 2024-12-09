@@ -1,0 +1,108 @@
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import javax.swing.*;
+
+public class GestorZombies {
+    private List<Zombie> zombies;
+    private Timer zombieTimer;
+    private Timer generadorZombies;
+    private JPanel[][] celdas;
+    private JFrame contenedor;
+
+    public GestorZombies(JPanel[][] celdas, JFrame contenedor) {
+        this.celdas = celdas;
+        this.contenedor = contenedor;
+        this.zombies = new ArrayList<>();
+        configurarTimerZombies();
+    }
+
+    private void configurarTimerZombies() {
+        zombieTimer = new Timer(40, e -> {
+            Iterator<Zombie> iterator = zombies.iterator();
+            while (iterator.hasNext()) {
+                Zombie zombie = iterator.next();
+                zombie.mover();
+
+                if (zombie.haLlegadoAlFinal(contenedor.getWidth())) {
+                    iterator.remove();
+                }
+            }
+            contenedor.repaint();
+        });
+
+        generadorZombies = new Timer(8000, e -> generarZombieAleatorio());
+        zombieTimer.start();
+        generadorZombies.start();
+    }
+    private String seleccionarTipoZombieAleatorio() {
+        String[] tipos = {"ZombieBasico", "zombieCono", "zombieCubeta", "zombieCerebro", "eciZombie"};
+        return tipos[(int) (Math.random() * tipos.length)];
+    }
+
+
+    public ImageIcon obtenerIconoZombie(int fila, int columna) {
+        for (Zombie zombie : zombies) {
+            if (zombie.getFila() == fila && zombie.getColumna() == columna) {
+                return zombie.getIcono();
+            }
+        }
+        return null; // No hay zombi en esta posición
+    }
+    public void generarZombiesIniciales(int filas) {
+        // Generar algunos zombies iniciales en diferentes filas
+        for (int i = 0; i < Math.min(3, filas); i++) {
+            generarZombieAleatorio();
+        }
+    }
+
+
+    public void generarZombieAleatorio() {
+        int filaAleatoria = (int) (Math.random() * celdas.length);
+        JPanel celda = celdas[filaAleatoria][celdas[0].length - 1];
+        Point posicionCelda = celda.getLocation();
+
+        int zombieX = contenedor.getWidth() - 50;
+        int zombieY = posicionCelda.y + celda.getHeight() / 2 - Zombie.ALTURA / 2;
+
+        String tipoZombie = seleccionarTipoZombieAleatorio();
+        int salud = switch (tipoZombie) {
+            case "Zombie" -> 100;
+            case "zombieCono" -> 150;
+            case "zombieCubeta" -> 200;
+            case "zombieCerebro" -> 250;
+            case "eciZombie" -> 300;
+            default -> 100;
+        };
+
+        Zombie zombie = new Zombie(tipoZombie, salud, zombieX, zombieY);
+        zombie.setVelocidadX(-1);  // Establecer velocidad después de crear el zombie
+        zombies.add(zombie);
+    }
+    public void reiniciar() {
+        if (zombieTimer != null) {
+            zombieTimer.start();
+        }
+        if (generadorZombies != null) {
+            generadorZombies.start();
+        }
+    }
+
+
+
+    public void detener() {
+        if (generadorZombies != null) {
+            generadorZombies.stop();
+        }
+        if (zombieTimer != null) {
+            zombieTimer.stop();
+        }
+    }
+
+    public void dibujarZombies(Graphics g) {
+        for (Zombie zombie : zombies) {
+            zombie.dibujar(g);
+        }
+    }
+}
