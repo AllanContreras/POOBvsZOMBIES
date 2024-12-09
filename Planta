@@ -1,1 +1,132 @@
+import javax.swing.ImageIcon;
+import java.awt.Image;
+import java.awt.Graphics;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Iterator;
+
+public class Planta {
+    private ImageIcon imagenBase;
+    private ImageIcon[] framesAnimacion;
+    private int x, y; // Posición de la planta
+    private int tiempoDisparo; // Intervalo entre disparos
+    private int contadorTiempo; // Contador para controlar el tiempo de disparo
+    private List<Proyectil> proyectiles; // Lista de proyectiles disparados
+    private int frameActual; // Frame actual para la animación
+    private int contadorAnimacion;// Controla la velocidad de la animación
+    private String rutaImagen;
+    private int vida;
+    private int dañoProyectil;
+    private int costoSol;
+
+    public Planta(String rutaBase, int vida, int dañoProyectil, int costoSol) {
+        // Cargar imagen base
+        this.rutaImagen = rutaBase;
+        this.imagenBase = new ImageIcon(rutaBase);
+        Image img = imagenBase.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+        this.imagenBase = new ImageIcon(img);
+
+        this.x = x;
+        this.y = y;
+        this.tiempoDisparo = tiempoDisparo;
+        this.contadorTiempo = 0; // Inicializar el contador de tiempo
+        this.proyectiles = new ArrayList<>();
+        this.frameActual = 0;
+        this.contadorAnimacion = 0;
+        this.rutaImagen = rutaImagen;
+        this.vida = vida;
+        this.dañoProyectil = dañoProyectil;
+        this.costoSol = costoSol;
+        //this.frames = cargarFramesAnimacion(rutaImagen);
+
+        // Cargar frames de animación específicos para cada tipo de planta
+        cargarFramesAnimacion(rutaBase);
+    }
+
+    private void cargarFramesAnimacion(String rutaBase) {
+        framesAnimacion = new ImageIcon[4]; // Ajusta según necesites
+        for (int i = 0; i < framesAnimacion.length; i++) {
+            // Modificar para usar la ruta base y tipo de planta
+            String rutaFrame = rutaBase.replace(".png", "_frame" + i + ".png");
+            try {
+                ImageIcon frame = new ImageIcon(rutaFrame);
+                Image img = frame.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+                framesAnimacion[i] = new ImageIcon(img);
+            } catch (Exception e) {
+                // Si no encuentra frames específicos, usa la imagen base
+                framesAnimacion[i] = imagenBase;
+            }
+        }
+    }
+
+    // Actualiza la planta (disparo y animación)
+    public void actualizar(List<Zombie> zombies,int anchoPantalla, int altoPantalla) {
+        contadorTiempo++; // Incrementa el contador de tiempo
+
+        // Disparar continuamente si el contador ha llegado al intervalo de tiempo
+        if (contadorTiempo >= tiempoDisparo) {
+            disparar(); // Dispara una vez cada intervalo de tiempo
+            contadorTiempo = 0; // Reinicia el contador de tiempo para el siguiente disparo
+        }
+
+        // Actualizar proyectiles
+        proyectiles.forEach(Proyectil::mover);
+        proyectiles.removeIf(p -> p.fueraDePantalla(anchoPantalla, altoPantalla)); // Elimina proyectiles fuera de la pantalla
+
+        // Actualizar animación
+        contadorAnimacion++;
+        if (contadorAnimacion >= 10) { // Controla la velocidad de cambio de frames
+            frameActual = (frameActual + 1) % framesAnimacion.length;
+            contadorAnimacion = 0;
+        }
+        for (Iterator<Proyectil> iterator = proyectiles.iterator(); iterator.hasNext();) {
+            Proyectil proyectil = iterator.next();
+            for (Zombie zombie : zombies) {
+                if (proyectil.colisionaCon(zombie)) {
+                    iterator.remove(); // Elimina el proyectil después de golpear
+                    break;
+                }
+            }
+        }
+
+    }
+
+
+    private void disparar() {
+        // Asegúrate de ajustar las coordenadas de acuerdo con el tamaño de la planta
+        String rutaImagen = "src\\IMG\\proyectil.png"; // Ruta de la imagen del proyectil
+        int daño = 10; // Valor del daño que causa el proyectil
+        Proyectil proyectil = new Proyectil(x + 50, y + 20, 5, 10, daño, rutaImagen); // Llamada al constructor con todos los parámetros
+        proyectiles.add(proyectil); // Agrega el proyectil a la lista de proyectiles
+    }
+
+
+    public void dibujar(Graphics g) {
+        // Dibujar la planta (animación)
+        g.drawImage(framesAnimacion[frameActual].getImage(), x, y, null);
+
+        // Dibujar los proyectiles
+        proyectiles.forEach(p -> p.dibujar(g));
+    }
+
+    public List<Proyectil> getProyectiles() {
+        return proyectiles;
+    }
+
+    public ImageIcon getImagen() {
+        return imagenBase;
+    }
+
+    public ImageIcon[] getFrames() {
+        return framesAnimacion;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+}
 
