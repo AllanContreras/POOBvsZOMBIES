@@ -5,14 +5,95 @@ import java.awt.event.ActionListener;
 
 public class BienvenidaJuego extends JFrame {
 
-    private JTextField nombreField;
-    private JComboBox<String> dificultadBox;
-    private JButton comenzarButton;
+    public JTextField nombreField;
+    public JButton comenzarButton;
     private JButton salirButton;
 
     public BienvenidaJuego() {
-        setTitle("Bienvenida - Plantas vs Zombis");
+        setTitle("Bienvenida - Poob vs Zombis");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
+        // Cargar la imagen de fondo
+        ImageIcon backgroundImage = new ImageIcon("src\\IMG\\index.jpg");
+
+        // Panel personalizado para el fondo
+        JPanel fondoPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+            }
+        };
+        fondoPanel.setLayout(new BorderLayout());
+
+        // Panel semitransparente para los campos de texto y etiquetas
+        JPanel contenedorPanel = new JPanel();
+        contenedorPanel.setLayout(new GridLayout(3, 1, 0, 10));
+        contenedorPanel.setBackground(new Color(0, 0, 0, 150));
+        contenedorPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Botón de Salir en la parte superior del contenedorPanel
+        salirButton = new JButton("Salir");
+        salirButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0); // Cierra la aplicación
+            }
+        });
+        JPanel salirPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        salirPanel.setOpaque(false);
+        salirPanel.add(salirButton);
+
+        // Panel para el campo de nombre
+        JPanel nombrePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        nombrePanel.setOpaque(false);
+        JLabel nombreLabel = new JLabel("Ingrese su nombre:");
+        nombreLabel.setForeground(Color.WHITE);
+        nombreField = new JTextField(15);
+        nombrePanel.add(nombreLabel);
+        nombrePanel.add(nombreField);
+
+
+
+        // Añadir los sub-paneles al contenedorPanel
+        contenedorPanel.add(salirPanel);
+        contenedorPanel.add(nombrePanel);
+       ;
+
+        // Botón de comenzar en la parte inferior del fondoPanel
+        comenzarButton = new JButton("Comenzar Juego");
+        comenzarButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String nombreJugador = nombreField.getText().trim();
+
+
+                if (nombreJugador.isEmpty()) {
+                    JOptionPane.showMessageDialog(BienvenidaJuego.this,
+                            "Por favor ingrese su nombre.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                dispose();  // Cierra la ventana actual
+                new VentanaPrincipal(nombreJugador); // Abre la ventana principal
+            }
+        });
+
+        // Colocar los paneles en el fondoPanel
+        fondoPanel.add(contenedorPanel, BorderLayout.CENTER);
+        fondoPanel.add(comenzarButton, BorderLayout.SOUTH);
+
+        add(fondoPanel);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            BienvenidaJuego bienvenida = new BienvenidaJuego();
+            bienvenida.setVisible(true);
+        });
+    }
+}
