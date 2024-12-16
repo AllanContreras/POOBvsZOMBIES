@@ -12,22 +12,22 @@ Branch Coverage: Cobertura de ramas (condicionales) evaluadas.
 ![image](https://github.com/user-attachments/assets/06965a20-4e44-4922-9cfa-3d89a07828ba)
 
 
-Observaciones y Análisis
-Clases con Cobertura Adecuada:
+# Observaciones y Análisis
+- Clases con Cobertura Adecuada:
 
-PruebasJuego: Tiene 97% en métodos y 83% en líneas, siendo una de las clases mejor probadas. Se alcanzan niveles altos en todas las métricas.
-Zombie y GestorZombies: Ambas tienen buena cobertura de líneas (70%) y ramas moderadas (31%-45%).
+- PruebasJuego: Tiene 97% en métodos y 83% en líneas, siendo una de las clases mejor probadas. Se alcanzan niveles altos en todas las métricas.
+- Zombie y GestorZombies: Ambas tienen buena cobertura de líneas (70%) y ramas moderadas (31%-45%).
 Clases con Cobertura Baja:
 
-Planta:
+- Planta:
 Method Coverage: 31% (solo 9 de 29 métodos probados).
 Line Coverage: 24% (45 de 185 líneas ejecutadas).
 Branch Coverage: Solo 7%, indicando falta de pruebas en los caminos condicionales.
-GestorPlantas:
+- GestorPlantas:
 Solo 28% en métodos y 16% en líneas, con 6% en branches. Esta clase parece ser una prioridad de mejora para aumentar su cobertura.
 Oportunidades de Mejora:
 
-Ramas (Branch Coverage): En general, la cobertura de ramas en la mayoría de las clases está por debajo del 50%. Esto indica que no todos los escenarios condicionales están siendo evaluados.
-Métodos Clave: Clases como PoobvsZombies y GestorPlantas presentan métodos que no están siendo cubiertos en su totalidad.
+- Ramas (Branch Coverage): En general, la cobertura de ramas en la mayoría de las clases está por debajo del 50%. Esto indica que no todos los escenarios condicionales están siendo evaluados.
+- Métodos Clave: Clases como PoobvsZombies y GestorPlantas presentan métodos que no están siendo cubiertos en su totalidad.
 Líneas No Ejecutadas: En Planta y GestorPlantas, gran parte del código no se ejecuta en las pruebas actuales.
 
