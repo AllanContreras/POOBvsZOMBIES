@@ -1,16 +1,36 @@
+package dominio;
+
 import java.awt.Graphics;
 import java.awt.Image;
 import javax.swing.ImageIcon;
 import java.awt.Rectangle;
-import java.awt.geom.Rectangle2D;
 
+/**
+ * Representa un proyectil en el juego. El proyectil puede ser disparado por una planta
+ * y colisionar con los zombies en el campo de juego.
+ *
+ * <p>Los proyectiles tienen una posición, velocidad y daño. Pueden moverse, ser dibujados en la pantalla
+ * y verificar si han colisionado con los zombies.</p>
+ *
+ * @author [Tu Nombre]
+ */
 public class Proyectil {
     private int x, y;           // Posición del proyectil
     private int velocidadX, velocidadY; // Velocidades en las direcciones X y Y
-    private int daño;           // Daño del proyectil
+    private int daño;           // Daño que causa el proyectil
+    private boolean esSol;      // Si es un sol (proyectil especial)
     private Image imagen;       // Imagen del proyectil
 
-    // Constructor
+    /**
+     * Constructor de un proyectil con velocidad y daño.
+     *
+     * @param x Posición en el eje X del proyectil.
+     * @param y Posición en el eje Y del proyectil.
+     * @param velocidadX Velocidad en el eje X.
+     * @param velocidadY Velocidad en el eje Y.
+     * @param daño Daño que causará el proyectil al impactar.
+     * @param rutaImagen Ruta de la imagen del proyectil.
+     */
     public Proyectil(int x, int y, int velocidadX, int velocidadY, int daño, String rutaImagen) {
         this.x = x;
         this.y = y;
@@ -18,19 +38,47 @@ public class Proyectil {
         this.velocidadY = velocidadY;
         this.daño = daño;
         this.imagen = new ImageIcon(rutaImagen).getImage(); // Cargar la imagen desde la ruta proporcionada
+        this.esSol = false;
     }
 
-    // Método para mover el proyectil
+    /**
+     * Constructor para un proyectil tipo sol sin velocidad ni daño.
+     *
+     * @param x Posición en el eje X del proyectil.
+     * @param y Posición en el eje Y del proyectil.
+     * @param rutaImagen Ruta de la imagen del proyectil.
+     */
+    public Proyectil(int x, int y, String rutaImagen) {
+        this(x, y, 0, 0, 0, rutaImagen); // Sin velocidad ni daño
+        this.esSol = true; // Este proyectil es un sol
+    }
+
+    /**
+     * Mueve el proyectil de acuerdo a su velocidad en las direcciones X y Y.
+     */
     public void mover() {
-        x += velocidadX;  // Mueve el proyectil horizontalmente
-        y += velocidadY;  // Mueve el proyectil verticalmente
+        if (!esSol) {
+            x += velocidadX;  // Mueve el proyectil horizontalmente
+            y += velocidadY;  // Mueve el proyectil verticalmente
+        }
     }
 
-    // Método para dibujar el proyectil en el panel
+    /**
+     * Dibuja el proyectil en el gráfico.
+     *
+     * @param g El objeto Graphics utilizado para dibujar en el panel.
+     */
     public void dibujar(Graphics g) {
         g.drawImage(imagen, x, y, null);
     }
-    public boolean colisionaCon(Zombie zombie) {
+
+    /**
+     * Verifica si el proyectil ha colisionado con un zombie.
+     *
+     * @param zombie El zombie que se verifica para la colisión.
+     * @return {@code true} si hubo colisión, {@code false} en caso contrario.
+     */
+    public boolean colisionaCon(dominio.Zombie zombie) {
         // Obtener dimensiones del proyectil
         int width = imagen.getWidth(null);
         int height = imagen.getHeight(null);
@@ -48,24 +96,61 @@ public class Proyectil {
         return false;
     }
 
-    // Obtener la posición X
+    /**
+     * Obtiene la posición X del proyectil.
+     *
+     * @return La posición en el eje X del proyectil.
+     */
     public int getX() {
         return x;
     }
 
-    // Obtener la posición Y
+    /**
+     * Obtiene la posición Y del proyectil.
+     *
+     * @return La posición en el eje Y del proyectil.
+     */
     public int getY() {
         return y;
     }
 
-    // Obtener el daño que causa el proyectil
+    /**
+     * Obtiene el daño que causa el proyectil.
+     *
+     * @return El valor del daño del proyectil.
+     */
     public int getDaño() {
         return daño;
     }
 
-    // Comprobar si el proyectil está fuera de la pantalla
+    /**
+     * Verifica si el proyectil ha salido fuera de la pantalla.
+     *
+     * @param anchoPantalla El ancho de la pantalla.
+     * @param altoPantalla El alto de la pantalla.
+     * @return {@code true} si el proyectil está fuera de la pantalla, {@code false} en caso contrario.
+     */
     public boolean fueraDePantalla(int anchoPantalla, int altoPantalla) {
         // Comprueba si el proyectil ha salido de la pantalla en cualquiera de las direcciones
         return x < 0 || x > anchoPantalla || y < 0 || y > altoPantalla;
     }
+
+    /**
+     * Establece la velocidad en el eje X del proyectil.
+     *
+     * @param velocidadX La nueva velocidad en el eje X.
+     */
+    public void setVelocidadX(int velocidadX) {
+        this.velocidadX = velocidadX;
+    }
+
+    /**
+     * Establece la velocidad en el eje Y del proyectil.
+     *
+     * @param velocidadY La nueva velocidad en el eje Y.
+     */
+    public void setVelocidadY(int velocidadY) {
+        this.velocidadY = velocidadY;
+    }
 }
+
