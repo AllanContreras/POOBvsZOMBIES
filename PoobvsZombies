@@ -1,3 +1,4 @@
+package dominio;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -7,14 +8,33 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import presentacion.TableroJugadorvsJugador;
+import presentacion.TableroJugadorvsMaquina;
+
+
+/**
+ * La clase PoobvsZombies gestiona la lógica del juego de "Poob vs Zombis".
+ * Crea y gestiona la interfaz de usuario, que incluye la selección de plantas, la colocación en el tablero, y las opciones de control del juego.
+ */
 
 public class PoobvsZombies {
+    // Atributos de la clase
     private JPanel panelPersonajes;
     private JFrame contenedor;
     private List<String> personajesDisponibles;
     private String personajeSeleccionado;
     private boolean plantaSeleccionada = false;
     private String tipoPlantaSeleccionada = null;
+    private boolean modoEliminarPlanta = false;
+
+    /**
+     * Constructor de la clase PoobvsZombies.
+     *
+     * @param contenedor El JFrame que contiene la interfaz de usuario.
+     * @param filas El número de filas del tablero.
+     * @param columnas El número de columnas del tablero.
+     * @param personajes Lista de personajes disponibles para el jugador.
+     */
 
     public PoobvsZombies(JFrame contenedor, int filas, int columnas, List<String> personajes) {
         this.contenedor = contenedor;
@@ -22,21 +42,113 @@ public class PoobvsZombies {
         this.personajeSeleccionado = personajes.get(0);
 
     }
+
+
+    /**
+     * Crea el panel principal que incluye el tablero y los controles.
+     *
+     * @param celdas El arreglo 2D de celdas del tablero.
+     * @return El panel principal con el tablero y los controles.
+     */
     public JPanel crearPanelPrincipal(JPanel[][] celdas) {
         JPanel mainPanel = new JPanel(new BorderLayout());
 
+        // Crear un JLayeredPane para manejar las capas
+        JLayeredPane layeredPane = new JLayeredPane();
+        layeredPane.setLayout(null); // Usamos null para manejar manualmente las posiciones y tamaños
 
-        // Panel de personajes
+        // Panel combinado de personajes y control
+        JPanel controlPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                try {
+                    // Cargar la imagen de fondo
+                    ImageIcon backgroundImage = new ImageIcon("src\\IMG\\fondo_control.png"); // Ajusta la ruta según tu imagen
+                    g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+                } catch (Exception e) {
+                    System.out.println("No se pudo cargar la imagen de fondo: " + e.getMessage());
+                }
+            }
+        };
+        controlPanel.setBounds(0, 0, 800, 100); // Ajusta las dimensiones
+        controlPanel.setOpaque(false); // Asegúrate de que el fondo no opaque otros componentes
+
+        // Panel de personajes (parte izquierda del controlPanel)
         JPanel personajesPanel = crearPanelPersonajes(null);
-        mainPanel.add(personajesPanel, BorderLayout.NORTH);
+
+        // Panel de botones (parte derecha del controlPanel)
+        JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        botonesPanel.setOpaque(false); // Fondo transparente para que no tape la imagen
+
+        // Contador de soles (primero en el orden)
+        JLabel contadorSolesLabel = new JLabel("100"); // Inicializamos solo con el número 100
+        contadorSolesLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        contadorSolesLabel.setForeground(Color.WHITE);
+        botonesPanel.add(contadorSolesLabel);
+
+// Incrementar soles automáticamente cada cierto tiempo
+        Timer timer = new Timer(10000, e -> { // Cada 2 segundos
+            int solesActuales = Integer.parseInt(contadorSolesLabel.getText()); // Solo el número
+            solesActuales += 25; // Incremento de soles
+            contadorSolesLabel.setText(String.valueOf(solesActuales)); // Actualiza solo con el número
+        });
+        timer.start();
+
+        // Botón "Guardar"
+        JButton guardarBtn = new JButton("Guardar");
+        guardarBtn.setPreferredSize(new Dimension(85, 20));
+        guardarBtn.setBackground(Color.GREEN);
+        guardarBtn.addActionListener(e -> ((TableroJugadorvsMaquina) contenedor).guardarJuego());
+        botonesPanel.add(guardarBtn);
+
+        // Botón "Pausar"
+        JButton pausarBtn = new JButton("Pausar");
+        pausarBtn.setPreferredSize(new Dimension(75, 20));
+        pausarBtn.setBackground(Color.YELLOW);
+        pausarBtn.addActionListener(e -> ((TableroJugadorvsMaquina) contenedor).pausarJuego());
+        botonesPanel.add(pausarBtn);  // Asegúrate de agregar el botón al panel de botones
+        // Botón "Reanudar"
+        JButton reanudarBtn = new JButton("Reanudar");
+        reanudarBtn.setPreferredSize(new Dimension(89, 20));
+        reanudarBtn.setBackground(Color.GREEN);
+        reanudarBtn.addActionListener(e -> ((TableroJugadorvsMaquina) contenedor).reanudarJuego());
+        botonesPanel.add(reanudarBtn);  // Asegúrate de agregar el botón al panel de botones
+
+        // Botón "Remover Planta"
+        JButton removerPlantaBtn = new JButton("Remover");
+        removerPlantaBtn.setPreferredSize(new Dimension(90, 20));
+        removerPlantaBtn.setBackground(Color.RED);
+        removerPlantaBtn.addActionListener(e -> {
+            // Cambiar el estado para indicar modo de eliminación
+            modoEliminarPlanta = true;
+            contenedor.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+        });
+        botonesPanel.add(removerPlantaBtn);
 
 
-        // Panel del tablero
+        // Agregar los sub-paneles al controlPanel
+        controlPanel.add(personajesPanel, BorderLayout.WEST); // Panel de personajes a la izquierda
+        controlPanel.add(botonesPanel, BorderLayout.EAST); // Botones a la derecha
+
+        layeredPane.add(controlPanel, Integer.valueOf(1)); // Agregar a la capa superior
+
+        // Panel del tablero (capa más baja)
         JPanel tableroPanel = crearPanelTablero(celdas);
-        mainPanel.add(tableroPanel, BorderLayout.CENTER);
+        tableroPanel.setBounds(0, 100, 800, 600); // Ajusta según el tamaño del tablero
+        layeredPane.add(tableroPanel, Integer.valueOf(0)); // Capa más baja
+
+        // Agregar el layeredPane al mainPanel
+        mainPanel.add(layeredPane, BorderLayout.CENTER);
 
         return mainPanel;
     }
+
+
+
+
+
+
 
     public JPanel crearPanelTablero(JPanel[][] celdas) {
         JPanel tableroPanel = new JPanel(new GridLayout(celdas.length, celdas[0].length));
@@ -81,22 +193,40 @@ public class PoobvsZombies {
                 cell.add(proyectilLabel);
                 cell.add(plantaLabel);
                 cell.add(fondoLabel);
+                // Colocar podadora automáticamente en la primera fila
+                if (i == 0 && j == 0) {
+                    JLabel podadoraLabel = new JLabel(new ImageIcon("src\\IMG\\Podadora1.png"));
+                    podadoraLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                    podadoraLabel.setVerticalAlignment(SwingConstants.CENTER);
+                    cell.add(podadoraLabel);
+                }
+                dominio.GestorPlantas gestorPlantas = new dominio.GestorPlantas(celdas, contenedor);
+
+
+
+
+
 
                 // Configurar eventos de clic
                 int fila = i, columna = j;
                 cell.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
-                        System.out.println("Clic en celda: plantaSeleccionada = " + plantaSeleccionada
-                                + ", tipoPlantaSeleccionada = " + tipoPlantaSeleccionada);
-
-                        if (plantaSeleccionada && tipoPlantaSeleccionada != null) {
-                            ((Tablero) contenedor).colocarPlanta(fila, columna);
-                        } else {
-                            System.out.println("No hay planta seleccionada o tipo es null.");
+                        if (modoEliminarPlanta) {
+                            // Verificar si hay una planta en esta celda
+                            if (gestorPlantas.hayPlantaEnCelda(fila, columna)) {
+                                // Llamar a removerPlanta
+                                gestorPlantas.removerPlanta(fila, columna);
+                                modoEliminarPlanta = false;
+                                contenedor.setCursor(Cursor.getDefaultCursor());
+                            }
+                        } else if (plantaSeleccionada && tipoPlantaSeleccionada != null) {
+                            ((TableroJugadorvsMaquina) contenedor).colocarPlanta(fila, columna);
                         }
                     }
                 });
+
+
 
 
                 celdas[i][j] = cell;
@@ -118,7 +248,7 @@ public class PoobvsZombies {
 
     public JPanel crearPanelPersonajes(ActionListener agregarPlantaListener) {
         panelPersonajes = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
-        panelPersonajes.setBackground(new Color(40, 40, 40));
+        panelPersonajes.setOpaque(false); // Hacer transparente el panel principal
         panelPersonajes.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         for (String personaje : personajesDisponibles) {
@@ -129,11 +259,11 @@ public class PoobvsZombies {
         return panelPersonajes;
     }
 
-    private JPanel crearPanelPersonaje(String personaje, ActionListener agregarPlantaListener) {
+    public JPanel crearPanelPersonaje(String personaje, ActionListener agregarPlantaListener) {
         JPanel btnPanel = new JPanel();
         btnPanel.setPreferredSize(new Dimension(60, 70));
         btnPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        btnPanel.setBackground(new Color(50, 50, 50));
+        btnPanel.setOpaque(false); // Hacer transparente el fondo del panel
 
         agregarImagenPersonaje(btnPanel, personaje);
         agregarNombrePersonaje(btnPanel, personaje);
@@ -142,7 +272,7 @@ public class PoobvsZombies {
         return btnPanel;
     }
 
-    private void agregarImagenPersonaje(JPanel btnPanel, String personaje) {
+    public void agregarImagenPersonaje(JPanel btnPanel, String personaje) {
         String rutaImagen = obtenerRutaImagenPersonaje(personaje);
         if (rutaImagen != null) {
             ImageIcon icon = new ImageIcon(rutaImagen);
@@ -153,7 +283,7 @@ public class PoobvsZombies {
         }
     }
 
-    private void agregarNombrePersonaje(JPanel btnPanel, String personaje) {
+    public void agregarNombrePersonaje(JPanel btnPanel, String personaje) {
         JLabel nameLabel = new JLabel(personaje);
         nameLabel.setForeground(Color.WHITE);
         nameLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -161,7 +291,8 @@ public class PoobvsZombies {
         btnPanel.add(nameLabel);
     }
 
-    private MouseListener crearListenerPersonaje(String personaje, JPanel panel, ActionListener agregarPlantaListener) {
+
+    public MouseListener crearListenerPersonaje(String personaje, JPanel panel, ActionListener agregarPlantaListener) {
         return new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -244,6 +375,7 @@ public class PoobvsZombies {
     public String obtenerRutaImagenPersonaje(String personaje) {
         Map<String, String> rutasImagenes = new HashMap<>();
         rutasImagenes.put("Girasol", "src\\IMG\\Girasol.png");
+        rutasImagenes.put("Evolver", "src\\IMG\\Evolver.png");
         rutasImagenes.put("Planta", "src\\IMG\\Planta.png");
         rutasImagenes.put("Nuez", "src\\IMG\\Nuez.png");
         rutasImagenes.put("PapaMina", "src\\IMG\\papaMina.png");
@@ -267,3 +399,4 @@ public class PoobvsZombies {
         reiniciarResaltadoPersonajes();
     }
 }
+
