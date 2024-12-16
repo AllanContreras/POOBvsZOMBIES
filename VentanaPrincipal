@@ -1,3 +1,4 @@
+package presentacion;
 import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
@@ -6,15 +7,25 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * Clase que representa la ventana principal del juego "Poob vs Zombis".
+ * Esta ventana contiene botones para acceder a los modos de juego, salir del juego y reproduce música de fondo.
+ */
 public class VentanaPrincipal extends JFrame {
 
-    private Clip audioClip;
+    private Clip audioClip; // Variable para almacenar el clip de audio de fondo
 
+    /**
+     * Constructor de la ventana principal.
+     * Inicializa los componentes gráficos y la lógica de la ventana principal.
+     *
+     * @param nombreJugador El nombre del jugador que se muestra en la ventana.
+     */
     public VentanaPrincipal(String nombreJugador) {
-        setTitle("Ventana Principal - Poob vs Zombis");
-        setSize(800, 500);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        setTitle("Ventana Principal - Poob vs Zombis"); // Título de la ventana
+        setSize(800, 500); // Tamaño de la ventana
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Cierra la aplicación cuando se cierra la ventana
+        setLocationRelativeTo(null); // Centra la ventana en la pantalla
 
         // Cargar la imagen de fondo
         ImageIcon backgroundImage = new ImageIcon("src\\IMG\\VentanaPrin.png");
@@ -24,70 +35,74 @@ public class VentanaPrincipal extends JFrame {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+                g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this); // Dibuja el fondo
             }
         };
-        fondoPanel.setLayout(new BorderLayout());
+        fondoPanel.setLayout(new BorderLayout()); // Usamos un layout de BorderLayout
 
         // Panel derecho para los botones
         JPanel rightPanel = new JPanel();
-        rightPanel.setLayout(new BorderLayout());
-        rightPanel.setOpaque(false);
+        rightPanel.setLayout(new BorderLayout()); // Usamos un layout de BorderLayout
+        rightPanel.setOpaque(false); // Hacemos el panel transparente
 
         // Panel central dentro de rightPanel para los botones AVENTURA y SUPERVIVENCIA
         JPanel modePanel = new JPanel();
-        modePanel.setLayout(new BoxLayout(modePanel, BoxLayout.Y_AXIS));
-        modePanel.setOpaque(false);
+        modePanel.setLayout(new BoxLayout(modePanel, BoxLayout.Y_AXIS)); // Usamos un BoxLayout en vertical
+        modePanel.setOpaque(false); // Hacemos el panel transparente
 
         // Botón MODOS DE JUEGO
         JButton MODOSDEJUEGOButton = new JButton("MODOS DE JUEGO");
-        MODOSDEJUEGOButton.setPreferredSize(new Dimension(150, 50));
-        MODOSDEJUEGOButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        MODOSDEJUEGOButton.setForeground(Color.WHITE);
-        MODOSDEJUEGOButton.setContentAreaFilled(false);
-        MODOSDEJUEGOButton.setBorderPainted(false);
-        MODOSDEJUEGOButton.addActionListener(new ActionListener() {
+        MODOSDEJUEGOButton.setPreferredSize(new Dimension(150, 50)); // Tamaño del botón
+        MODOSDEJUEGOButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra el botón
+        MODOSDEJUEGOButton.setForeground(Color.WHITE); // Color del texto
+        MODOSDEJUEGOButton.setContentAreaFilled(false); // No tiene color de fondo
+        MODOSDEJUEGOButton.setBorderPainted(false); // No tiene borde
+        MODOSDEJUEGOButton.addActionListener(new ActionListener() { // Acción cuando se hace clic en el botón
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Detener la música si está sonando
                 if (audioClip != null && audioClip.isRunning()) {
                     audioClip.stop(); // Detener la música antes de abrir SeleccionNivel
                 }
                 dispose(); // Cerrar la ventana actual
-                new SeleccionModo(VentanaPrincipal.this); // Abrir SeleccionNivel y pasar la referencia de esta ventana
+                new SeleccionModo(VentanaPrincipal.this); // Abrir la ventana de selección de modo
             }
         });
 
-        // Botón SUPERVIVENCIA
+        // Botón SUPERVIVENCIA (aún sin acción asociada)
         JButton supervivenciaButton = new JButton("SUPERVIVENCIA");
-        supervivenciaButton.setPreferredSize(new Dimension(150, 50));
-        supervivenciaButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        supervivenciaButton.setForeground(Color.WHITE);
-        supervivenciaButton.setContentAreaFilled(false);
-        supervivenciaButton.setBorderPainted(false);
+        supervivenciaButton.setPreferredSize(new Dimension(150, 50)); // Tamaño del botón
+        supervivenciaButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra el botón
+        supervivenciaButton.setForeground(Color.WHITE); // Color del texto
+        supervivenciaButton.setContentAreaFilled(false); // No tiene color de fondo
+        supervivenciaButton.setBorderPainted(false); // No tiene borde
 
         // Botón SALIR
         JButton salirButton = new JButton("SALIR");
-        salirButton.setPreferredSize(new Dimension(150, 50));
-        salirButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        salirButton.setForeground(Color.WHITE);
-        salirButton.setContentAreaFilled(false);
-        salirButton.setBorderPainted(false);
-        salirButton.addActionListener(new ActionListener() {
+        salirButton.setPreferredSize(new Dimension(150, 50)); // Tamaño del botón
+        salirButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra el botón
+        salirButton.setForeground(Color.WHITE); // Color del texto
+        salirButton.setContentAreaFilled(false); // No tiene color de fondo
+        salirButton.setBorderPainted(false); // No tiene borde
+        salirButton.addActionListener(new ActionListener() { // Acción cuando se hace clic en el botón
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Detener la música si está sonando
                 if (audioClip != null && audioClip.isRunning()) {
                     audioClip.stop();
                 }
-                System.exit(0);
+                System.exit(0); // Salir de la aplicación
             }
         });
 
-        // Añadir paneles y fondo a la ventana
+        // Añadir los botones al panel modePanel
         modePanel.add(Box.createVerticalGlue());
         modePanel.add(MODOSDEJUEGOButton);
-        modePanel.add(Box.createVerticalStrut(20));
+        modePanel.add(Box.createVerticalStrut(20)); // Espacio entre los botones
         modePanel.add(supervivenciaButton);
         modePanel.add(Box.createVerticalGlue());
+
+        // Añadir modePanel y el botón SALIR al panel derecho
         rightPanel.add(modePanel, BorderLayout.CENTER);
         rightPanel.add(salirButton, BorderLayout.SOUTH);
         fondoPanel.add(rightPanel, BorderLayout.EAST);
@@ -99,18 +114,18 @@ public class VentanaPrincipal extends JFrame {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
-                g2d.rotate(Math.toRadians(-10), getWidth() / 2, getHeight() / 2);
-                g2d.setColor(new Color(0, 0, 0, 150));
-                g2d.fillRoundRect(10, 10, 200, 100, 15, 15);
-                g2d.rotate(Math.toRadians(10), getWidth() / 2, getHeight() / 2);
+                g2d.rotate(Math.toRadians(-10), getWidth() / 2, getHeight() / 2); // Rotar el panel de bienvenida
+                g2d.setColor(new Color(0, 0, 0, 150)); // Fondo negro semitransparente
+                g2d.fillRoundRect(10, 10, 200, 100, 15, 15); // Rectángulo con bordes redondeados
+                g2d.rotate(Math.toRadians(10), getWidth() / 2, getHeight() / 2); // Revertir la rotación
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-                g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("Arial", Font.BOLD, 16));
-                g2d.drawString("Bienvenido, " + nombreJugador + "!", 30, 60);
+                g2d.setColor(Color.WHITE); // Color del texto
+                g2d.setFont(new Font("Arial", Font.BOLD, 16)); // Fuente del texto
+                g2d.drawString("Bienvenido, " + nombreJugador + "!", 30, 60); // Texto de bienvenida
             }
         };
-        welcomePanel.setPreferredSize(new Dimension(250, 150));
-        welcomePanel.setOpaque(false);
+        welcomePanel.setPreferredSize(new Dimension(250, 150)); // Tamaño del panel de bienvenida
+        welcomePanel.setOpaque(false); // Transparente
         fondoPanel.add(welcomePanel, BorderLayout.WEST);
 
         // Añadir fondoPanel al JFrame
@@ -119,21 +134,25 @@ public class VentanaPrincipal extends JFrame {
         // Reproducir la música de fondo
         reproducirMusica("src\\sounds\\Theme.wav");
 
-        setVisible(true);
+        setVisible(true); // Hacer visible la ventana
     }
 
+    /**
+     * Método para reproducir la música de fondo.
+     *
+     * @param rutaArchivo Ruta del archivo de música a reproducir.
+     */
     private void reproducirMusica(String rutaArchivo) {
         try {
-            File archivoAudio = new File(rutaArchivo);
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(archivoAudio);
-            audioClip = AudioSystem.getClip();
-            audioClip.open(audioStream);
-            audioClip.loop(Clip.LOOP_CONTINUOUSLY);
-            audioClip.start();
+            File archivoAudio = new File(rutaArchivo); // Crear archivo de audio
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(archivoAudio); // Obtener el flujo de audio
+            audioClip = AudioSystem.getClip(); // Obtener el clip de audio
+            audioClip.open(audioStream); // Abrir el clip de audio
+            audioClip.loop(Clip.LOOP_CONTINUOUSLY); // Reproducir en bucle
+            audioClip.start(); // Iniciar la reproducción
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "No se pudo cargar el archivo de audio.");
+            JOptionPane.showMessageDialog(this, "No se pudo cargar el archivo de audio."); // Error al cargar la música
         }
     }
 }
-
