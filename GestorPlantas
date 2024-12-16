@@ -1,3 +1,7 @@
+package dominio;
+
+import presentacion.TableroJugadorvsMaquina;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -5,14 +9,53 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * La clase GestorPlantas se encarga de gestionar las plantas en un tablero de juego. Permite agregar,
+ * animar, disparar proyectiles, pausar, reanudar y eliminar plantas de las celdas.
+ */
 public class GestorPlantas {
+
+    /**
+     * Mapa que almacena las posiciones de las plantas colocadas y su estado (true si está ocupada).
+     */
     private Map<Point, Boolean> plantasColocadas;
+
+    /**
+     * Mapa que almacena los timers responsables de las animaciones de cada planta.
+     */
     private Map<Point, Timer> plantaAnimaciones;
+
+    /**
+     * Mapa que almacena los timers responsables de los disparos automáticos de cada planta.
+     */
     private Map<Point, Timer> plantaDisparos;
+
+    /**
+     * Mapa que almacena el frame actual de animación de cada planta.
+     */
     private Map<Point, Integer> plantaFrames;
+
+    /**
+     * Matriz de paneles que representa las celdas del tablero.
+     */
     private JPanel[][] celdas;
+
+    /**
+     * Contenedor principal de la interfaz gráfica del juego.
+     */
     private JFrame contenedor;
 
+    /**
+     * Referencia al tablero de juego para gestionar interacciones avanzadas.
+     */
+    private TableroJugadorvsMaquina tablero;
+
+    /**
+     * Constructor de la clase GestorPlantas.
+     *
+     * @param celdas Matriz de paneles que representan las celdas del tablero.
+     * @param contenedor Contenedor principal de la interfaz gráfica.
+     */
     public GestorPlantas(JPanel[][] celdas, JFrame contenedor) {
         this.celdas = celdas;
         this.contenedor = contenedor;
@@ -22,21 +65,23 @@ public class GestorPlantas {
         plantaFrames = new HashMap<>();
     }
 
-    public void agregarPlanta(int fila, int columna, Planta planta) {
+    /**
+     * Agrega una planta a una celda específica del tablero.
+     *
+     * @param fila Fila de la celda donde se colocará la planta.
+     * @param columna Columna de la celda donde se colocará la planta.
+     * @param planta Objeto Planta que se agregará al tablero.
+     */
+    public void agregarPlanta(int fila, int columna, dominio.Planta planta) {
         Point posicion = new Point(fila, columna);
 
-        // Verificar si ya hay una planta
         if (plantasColocadas.containsKey(posicion) && plantasColocadas.get(posicion)) {
             JOptionPane.showMessageDialog(contenedor, "Ya hay una planta en esta posición.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         JPanel cell = celdas[fila][columna];
-
-        // Asegúrate de usar el índice correcto para el label de planta
-        JLabel plantLabel = (JLabel) cell.getComponent(2);  // Componente de planta
-
-        // Escalar imagen si es necesario
+        JLabel plantLabel = (JLabel) cell.getComponent(2);
         ImageIcon imagen = planta.getImagen();
         Image scaledImage = imagen.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
         plantLabel.setIcon(new ImageIcon(scaledImage));
@@ -47,11 +92,22 @@ public class GestorPlantas {
         iniciarAnimacionPlanta(fila, columna, planta);
         iniciarDisparoAutomatico(fila, columna);
     }
+
+    /**
+     * Reinicia el estado del gestor, eliminando todas las plantas y limpiando el tablero.
+     */
     public void reiniciar() {
-        }
+        detener();
+        plantasColocadas.clear();
+        plantaFrames.clear();
+    }
 
-
-
+    /**
+     * Inicia el disparo automático de proyectiles desde una planta en una celda específica.
+     *
+     * @param fila Fila de la celda donde está la planta.
+     * @param columna Columna de la celda donde está la planta.
+     */
     public void iniciarDisparoAutomatico(int fila, int columna) {
         Point posicion = new Point(fila, columna);
 
@@ -71,7 +127,14 @@ public class GestorPlantas {
         timerDisparo.start();
     }
 
-    private void iniciarAnimacionPlanta(int fila, int columna, Planta planta) {
+    /**
+     * Inicia la animación de una planta en una celda específica.
+     *
+     * @param fila Fila de la celda donde está la planta.
+     * @param columna Columna de la celda donde está la planta.
+     * @param planta Objeto Planta que contiene los frames y la velocidad de animación.
+     */
+    private void iniciarAnimacionPlanta(int fila, int columna, dominio.Planta planta) {
         Point posicion = new Point(fila, columna);
 
         if (plantaAnimaciones.containsKey(posicion)) {
@@ -79,8 +142,9 @@ public class GestorPlantas {
         }
 
         ImageIcon[] frames = planta.getFrames();
+        int velocidadAnimacion = planta.getVelocidadAnimacion();
 
-        Timer timer = new Timer(350, e -> {
+        Timer timer = new Timer(velocidadAnimacion, e -> {
             if (!plantasColocadas.containsKey(posicion)) {
                 ((Timer) e.getSource()).stop();
                 return;
@@ -97,6 +161,12 @@ public class GestorPlantas {
         timer.start();
     }
 
+    /**
+     * Dispara un proyectil desde una planta en una fila específica del tablero.
+     *
+     * @param fila Fila desde donde se dispara el proyectil.
+     * @param columnaInicial Columna inicial donde está la planta que dispara.
+     */
     public void dispararProyectil(int fila, int columnaInicial) {
         if (fila < 0 || fila >= celdas.length || columnaInicial < 0 || columnaInicial >= celdas[0].length) {
             return;
@@ -112,19 +182,16 @@ public class GestorPlantas {
         final int[] columnaActual = {columnaStart};
 
         Timer timer = new Timer(100, e -> {
-            // Limpiar el proyectil de la columna anterior
             if (columnaActual[0] > columnaInicial + 1) {
                 JLabel labelAnterior = (JLabel) celdas[fila][columnaActual[0] - 1].getComponent(1);
                 labelAnterior.setIcon(null);
             }
 
-            // Verificar límites del tablero
             if (columnaActual[0] >= celdas[0].length) {
                 ((Timer) e.getSource()).stop();
                 return;
             }
 
-            // Colocar el proyectil en la nueva columna
             JLabel labelActual = (JLabel) celdas[fila][columnaActual[0]].getComponent(1);
             labelActual.setIcon(proyectilScaled);
 
@@ -133,10 +200,25 @@ public class GestorPlantas {
 
         timer.start();
     }
-    private boolean existePlanta(int fila, int columna) {
+
+    /**
+     * Verifica si hay una planta colocada en una celda específica.
+     *
+     * @param fila Fila de la celda a verificar.
+     * @param columna Columna de la celda a verificar.
+     * @return true si hay una planta, false en caso contrario.
+     */
+    public boolean hayPlantaEnCelda(int fila, int columna) {
         Point posicion = new Point(fila, columna);
         return plantasColocadas.containsKey(posicion) && plantasColocadas.get(posicion);
     }
+    /**
+     * Elimina una planta de una celda específica.
+     *
+     * @param fila Fila de la celda de la que se eliminará la planta.
+     * @param columna Columna de la celda de la que se eliminará la planta.
+     */
+
 
     public void removerPlanta(int fila, int columna) {
         Point posicion = new Point(fila, columna);
@@ -168,6 +250,24 @@ public class GestorPlantas {
             JOptionPane.showMessageDialog(contenedor, "No hay una planta en esta posición.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    public void pausar() {
+        for (Timer timer : plantaDisparos.values()) {
+            timer.stop();  // Pausa los timers de disparo
+        }
+        for (Timer timer : plantaAnimaciones.values()) {
+            timer.stop();  // Pausa los timers de animación
+        }
+    }
+    public void reanudar() {
+        for (Timer timer : plantaDisparos.values()) {
+            timer.start();  // Reanuda el disparo automático de las plantas
+        }
+        for (Timer timer : plantaAnimaciones.values()) {
+            timer.start();  // Reanuda las animaciones de las plantas
+        }
+    }
+
+
 
     public void detener() {
         for (Timer timer : plantaDisparos.values()) {
