@@ -1,0 +1,193 @@
+package presentacion;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Esta clase representa la ventana donde el jugador selecciona los personajes zombies
+ * para el modo de juego. Los personajes seleccionados se pasan a la siguiente pantalla,
+ * que depende del modo seleccionado.
+ */
+public class SeleccionPersonajesZombies extends JFrame {
+
+    // Lista para almacenar los personajes zombies seleccionados
+    private List<String> personajesZombiesSeleccionados;
+
+    // Lista de personajes previamente seleccionados (de plantas)
+    private List<String> personajesSeleccionados;
+
+    // Modo de juego seleccionado (por ejemplo, "JvsJ")
+    private String modoSeleccionado;
+
+    /**
+     * Constructor que inicializa la ventana de selección de personajes zombies.
+     * @param ventanaAnterior La ventana anterior que se cerrará al confirmar la selección.
+     * @param personajesSeleccionados Los personajes previamente seleccionados por el usuario (de plantas).
+     * @param modoSeleccionado El modo de juego seleccionado ("JvsJ", "JvsM", etc.).
+     */
+    public SeleccionPersonajesZombies(JFrame ventanaAnterior, List<String> personajesSeleccionados, String modoSeleccionado) {
+        // Inicializar los valores
+        this.personajesSeleccionados = personajesSeleccionados;
+        this.modoSeleccionado = modoSeleccionado;
+
+        setTitle("Seleccionar Personajes Zombies");
+        setSize(800, 500);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        personajesZombiesSeleccionados = new ArrayList<>();
+
+        // Fondo personalizado con oscurecimiento
+        ImageIcon backgroundImage = new ImageIcon("src\\IMG\\fondo_personajes.jpg");
+        JPanel fondoPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.drawImage(backgroundImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+                // Color de sobrecarga para oscurecer el fondo
+                Color overlayColor = new Color(0, 0, 0, 150);
+                g.setColor(overlayColor);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        fondoPanel.setLayout(new BorderLayout()); // Usar BorderLayout para organizar los elementos
+        fondoPanel.setOpaque(false); // Hacer el fondo del panel transparente
+
+        // Titulo de la ventana
+        JLabel titulo = new JLabel("Selecciona tus personajes zombies para " + modoSeleccionado, SwingConstants.CENTER);
+        titulo.setFont(new Font("Arial", Font.BOLD, 18));
+        titulo.setForeground(Color.WHITE);
+        fondoPanel.add(titulo, BorderLayout.NORTH);
+
+        // Panel para personajes zombies
+        JPanel zombiesPanel = new JPanel();
+        zombiesPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20)); // Espaciado entre zombies
+        zombiesPanel.setOpaque(false); // Hacer transparente
+
+        // Personajes zombies e imágenes asociadas
+        String[] personajesZombies = {"ZombieBasico", "ZombieCono", "ZombieCubeta", "eciZombie", "ZombieCerebro"};
+        String[] imagenesZombies = {
+                "src\\IMG\\Zombie_frame0.png",
+                "src\\IMG\\zombieCono.png",
+                "src\\IMG\\zombieCubeta.png",
+                "src\\IMG\\ecizombie.png",
+                "src\\IMG\\zombieCerebro.png",
+        };
+
+        // Añadir paneles para cada personaje zombie
+        for (int i = 0; i < personajesZombies.length; i++) {
+            String personajeZombie = personajesZombies[i];
+            String imagenPath = imagenesZombies[i];
+
+            // Crear panel con esquinas redondeadas
+            JPanel zombiePanel = new RoundedPanel(20, new Color(255, 255, 255, 100));
+            zombiePanel.setLayout(new BorderLayout());
+            zombiePanel.setPreferredSize(new Dimension(120, 150));
+
+            // Crear la imagen escalada para el personaje zombie
+            ImageIcon originalIcon = new ImageIcon(imagenPath);
+            Image imagenEscalada = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+            JLabel imagenLabel = new JLabel(new ImageIcon(imagenEscalada));
+
+            // Crear la etiqueta con el nombre del personaje
+            JLabel nombreLabel = new JLabel(personajeZombie, SwingConstants.CENTER);
+            nombreLabel.setForeground(Color.BLACK);
+            nombreLabel.setFont(new Font("Arial", Font.BOLD, 14));
+
+            zombiePanel.add(imagenLabel, BorderLayout.CENTER);
+            zombiePanel.add(nombreLabel, BorderLayout.SOUTH);
+
+            // Acción de selección visual
+            zombiePanel.addMouseListener(new MouseAdapter() {
+                private boolean seleccionado = false;
+
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (!seleccionado) {
+                        // Añadir el personaje a la lista de seleccionados
+                        personajesZombiesSeleccionados.add(personajeZombie);
+                        zombiePanel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 4)); // Borde verde
+                        seleccionado = true;
+                    } else {
+                        // Eliminar el personaje de la lista de seleccionados
+                        personajesZombiesSeleccionados.remove(personajeZombie);
+                        zombiePanel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2)); // Borde blanco
+                        seleccionado = false;
+                    }
+
+                    zombiePanel.repaint();
+                    zombiePanel.revalidate();
+                }
+            });
+
+            // Añadir el panel del personaje zombie al panel principal
+            zombiesPanel.add(zombiePanel);
+        }
+
+        // Añadir el panel de zombies al fondo
+        fondoPanel.add(zombiesPanel, BorderLayout.CENTER);
+
+        // Botón de confirmación para finalizar la selección
+        JButton confirmarButton = new JButton("Confirmar");
+        confirmarButton.addActionListener(e -> {
+            if (!personajesZombiesSeleccionados.isEmpty()) {
+                // Mostrar los personajes seleccionados
+                JOptionPane.showMessageDialog(this, "Has seleccionado: " + personajesZombiesSeleccionados);
+
+                // Lógica para abrir el tablero de acuerdo con el modo seleccionado
+                if (modoSeleccionado.equals("JvsJ")) {
+                    // Abre el tablero de Jugador vs Jugador
+                    TableroJugadorvsJugador tablero = new TableroJugadorvsJugador(5, 12, personajesZombiesSeleccionados);
+                    dispose();  // Cerrar la ventana de selección
+                } else {
+                    JOptionPane.showMessageDialog(this, "Modo desconocido.");
+                }
+
+            } else {
+                // Mensaje si no se seleccionan personajes zombies
+                JOptionPane.showMessageDialog(this, "Por favor selecciona al menos un personaje zombie.");
+            }
+        });
+        fondoPanel.add(confirmarButton, BorderLayout.SOUTH);
+
+        // Añadir el panel de fondo a la ventana y hacer visible la ventana
+        add(fondoPanel);
+        setVisible(true);
+    }
+
+    /**
+     * Clase para crear paneles con esquinas redondeadas para mejorar la estética.
+     */
+    static class RoundedPanel extends JPanel {
+        private int cornerRadius;
+        private Color backgroundColor;
+
+        /**
+         * Constructor de la clase RoundedPanel.
+         * @param radius El radio de las esquinas redondeadas.
+         * @param bgColor El color de fondo del panel.
+         */
+        public RoundedPanel(int radius, Color bgColor) {
+            this.cornerRadius = radius;
+            this.backgroundColor = bgColor;
+            setOpaque(false); // Hacer el panel transparente
+        }
+
+        /**
+         * Método para pintar el panel con esquinas redondeadas.
+         * @param g El objeto Graphics utilizado para dibujar el panel.
+         */
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(backgroundColor);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
+        }
+    }
+}
