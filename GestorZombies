@@ -1,55 +1,120 @@
+package dominio;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import javax.swing.*;
 
+/**
+ * La clase GestorZombies se encarga de gestionar la creación, movimiento y eliminación de zombies
+ * en el juego, así como la interacción con el panel donde se muestra el juego.
+ * Utiliza temporizadores para mover los zombies y generar nuevos zombies en intervalos regulares.
+ */
 public class GestorZombies {
-    private List<Zombie> zombies;
-    private Timer zombieTimer;
-    private Timer generadorZombies;
-    private JPanel[][] celdas;
-    private JFrame contenedor;
 
+    private List<dominio.Zombie> zombies; // Lista de zombies actuales en el juego
+    private Timer zombieTimer; // Temporizador para mover los zombies
+    private Timer generadorZombies; // Temporizador para generar nuevos zombies
+    private JPanel[][] celdas; // El tablero de celdas donde se colocan los zombies
+    private JFrame contenedor; // Contenedor del juego (ventana principal)
+
+    /**
+     * Constructor que inicializa el GestorZombies con el tablero de celdas y el contenedor de la ventana.
+     * @param celdas Las celdas del tablero donde los zombies se colocan.
+     * @param contenedor La ventana principal del juego.
+     */
     public GestorZombies(JPanel[][] celdas, JFrame contenedor) {
         this.celdas = celdas;
         this.contenedor = contenedor;
         this.zombies = new ArrayList<>();
-        configurarTimerZombies();
+        configurarTimerZombies(); // Configura los temporizadores para el movimiento y la generación de zombies
     }
 
+    /**
+     * Configura los temporizadores para mover los zombies y generar nuevos zombies en intervalos específicos.
+     */
     private void configurarTimerZombies() {
+        // Temporizador para mover los zombies cada 40 milisegundos
         zombieTimer = new Timer(40, e -> {
-            Iterator<Zombie> iterator = zombies.iterator();
+            Iterator<dominio.Zombie> iterator = zombies.iterator();
             while (iterator.hasNext()) {
-                Zombie zombie = iterator.next();
-                zombie.mover();
+                dominio.Zombie zombie = iterator.next();
+                zombie.mover(); // Mover cada zombie
 
+                // Eliminar zombies que han llegado al final
                 if (zombie.haLlegadoAlFinal(contenedor.getWidth())) {
                     iterator.remove();
                 }
             }
-            contenedor.repaint();
+            contenedor.repaint(); // Redibuja el tablero después de mover los zombies
         });
 
+        // Temporizador para generar nuevos zombies cada 8000 milisegundos
         generadorZombies = new Timer(8000, e -> generarZombieAleatorio());
-        zombieTimer.start();
-        generadorZombies.start();
+        zombieTimer.start(); // Inicia el temporizador de movimiento de zombies
+        generadorZombies.start(); // Inicia el generador de zombies
     }
+
+    /**
+     * Coloca un zombie en una celda específica del tablero.
+     * @param fila La fila en la que colocar el zombie.
+     * @param columna La columna en la que colocar el zombie.
+     * @param tipoZombie El tipo de zombie que se va a colocar.
+     */
+    public void colocarZombie(int fila, int columna, String tipoZombie) {
+        JPanel celda = celdas[fila][columna];
+        Point posicionCelda = celda.getLocation();
+
+        // Calcular las posiciones de X y Y para colocar el zombie en el centro de la celda
+        int zombieX = posicionCelda.x + celda.getWidth() / 2 - dominio.Zombie.ALTURA / 2;
+        int zombieY = posicionCelda.y + celda.getHeight() / 2 - dominio.Zombie.ALTURA / 2;
+
+        // Crear un nuevo zombie con el tipo y la posición especificados
+        dominio.Zombie zombie = new dominio.Zombie(tipoZombie, 100, zombieX, zombieY);
+        zombie.setVelocidadX(-1);  // Los zombies se mueven hacia la izquierda
+        zombies.add(zombie);
+
+        contenedor.repaint(); // Redibuja el tablero después de agregar el zombie
+    }
+
+    /**
+     * Agrega un zombie a la lista de zombies.
+     * @param zombie El zombie que se va a agregar.
+     */
+    public void agregarZombie(dominio.Zombie zombie) {
+        zombies.add(zombie);
+        contenedor.repaint(); // Redibuja el tablero después de agregar el nuevo zombie
+    }
+
+    /**
+     * Selecciona aleatoriamente un tipo de zombie.
+     * @return El nombre del tipo de zombie seleccionado.
+     */
     private String seleccionarTipoZombieAleatorio() {
         String[] tipos = {"ZombieBasico", "zombieCono", "zombieCubeta", "zombieCerebro", "eciZombie"};
         return tipos[(int) (Math.random() * tipos.length)];
     }
 
-
+    /**
+     * Obtiene el icono del zombie en una posición específica del tablero.
+     * @param fila La fila donde se busca el zombie.
+     * @param columna La columna donde se busca el zombie.
+     * @return El icono del zombie en la posición especificada, o null si no hay zombie.
+     */
     public ImageIcon obtenerIconoZombie(int fila, int columna) {
-        for (Zombie zombie : zombies) {
+        for (dominio.Zombie zombie : zombies) {
             if (zombie.getFila() == fila && zombie.getColumna() == columna) {
                 return zombie.getIcono();
             }
         }
-        return null; // No hay zombi en esta posición
+        return null; // No hay zombie en esta posición
     }
+
+    /**
+     * Genera zombies iniciales en las primeras filas del tablero.
+     * @param filas El número de filas en el tablero.
+     */
     public void generarZombiesIniciales(int filas) {
         // Generar algunos zombies iniciales en diferentes filas
         for (int i = 0; i < Math.min(3, filas); i++) {
@@ -57,16 +122,19 @@ public class GestorZombies {
         }
     }
 
-
+    /**
+     * Genera un zombie aleatorio en una posición aleatoria del tablero.
+     */
     public void generarZombieAleatorio() {
         int filaAleatoria = (int) (Math.random() * celdas.length);
         JPanel celda = celdas[filaAleatoria][celdas[0].length - 1];
         Point posicionCelda = celda.getLocation();
 
+        // Establecer las posiciones del zombie
         int zombieX = contenedor.getWidth() - 50;
-        int zombieY = posicionCelda.y + celda.getHeight() / 2 - Zombie.ALTURA / 2;
+        int zombieY = posicionCelda.y + celda.getHeight() / 2 - dominio.Zombie.ALTURA / 2;
 
-        String tipoZombie = seleccionarTipoZombieAleatorio();
+        String tipoZombie = seleccionarTipoZombieAleatorio(); // Seleccionar un tipo de zombie aleatorio
         int salud = switch (tipoZombie) {
             case "Zombie" -> 100;
             case "zombieCono" -> 150;
@@ -76,33 +144,91 @@ public class GestorZombies {
             default -> 100;
         };
 
-        Zombie zombie = new Zombie(tipoZombie, salud, zombieX, zombieY);
-        zombie.setVelocidadX(-1);  // Establecer velocidad después de crear el zombie
+        dominio.Zombie zombie = new dominio.Zombie(tipoZombie, salud, zombieX, zombieY);
+        zombie.setVelocidadX(-1);  // Establecer la velocidad del zombie
         zombies.add(zombie);
     }
+
+    /**
+     * Reinicia los temporizadores de los zombies, reiniciando el movimiento y la generación de zombies.
+     */
     public void reiniciar() {
         if (zombieTimer != null) {
-            zombieTimer.start();
+            zombieTimer.start(); // Reinicia el temporizador de movimiento de los zombies
         }
         if (generadorZombies != null) {
-            generadorZombies.start();
+            generadorZombies.start(); // Reinicia el temporizador de generación de zombies
         }
     }
 
-
-
-    public void detener() {
+    /**
+     * Pausa los temporizadores de movimiento y generación de zombies.
+     */
+    public void pausar() {
         if (generadorZombies != null) {
-            generadorZombies.stop();
+            generadorZombies.stop(); // Detiene la generación de zombies
         }
         if (zombieTimer != null) {
-            zombieTimer.stop();
+            zombieTimer.stop(); // Detiene el movimiento de los zombies
         }
     }
 
+    /**
+     * Reanuda los temporizadores de movimiento y generación de zombies.
+     */
+    public void reanudar() {
+        if (generadorZombies != null) {
+            generadorZombies.start(); // Reanuda la generación de zombies
+        }
+        if (zombieTimer != null) {
+            zombieTimer.start(); // Reanuda el movimiento de los zombies
+        }
+    }
+
+    /**
+     * Obtiene la lista de zombies actuales en el juego.
+     * @return La lista de zombies.
+     */
+    public List<dominio.Zombie> getZombies() {
+        return zombies;
+    }
+
+    /**
+     * Verifica si el temporizador de zombies está en ejecución.
+     * @return true si el temporizador de zombies está corriendo, false en caso contrario.
+     */
+    public boolean isZombieTimerRunning() {
+        return zombieTimer.isRunning();
+    }
+
+    /**
+     * Verifica si el temporizador de generación de zombies está en ejecución.
+     * @return true si el generador de zombies está corriendo, false en caso contrario.
+     */
+    public boolean isGeneradorZombiesRunning() {
+        return generadorZombies.isRunning();
+    }
+
+    /**
+     * Detiene todos los temporizadores y el movimiento de los zombies.
+     */
+    public void detener() {
+        if (generadorZombies != null) {
+            generadorZombies.stop(); // Detiene la generación de zombies
+        }
+        if (zombieTimer != null) {
+            zombieTimer.stop(); // Detiene el movimiento de los zombies
+        }
+    }
+
+    /**
+     * Dibuja todos los zombies en el panel.
+     * @param g El objeto Graphics utilizado para dibujar en el panel.
+     */
     public void dibujarZombies(Graphics g) {
-        for (Zombie zombie : zombies) {
-            zombie.dibujar(g);
+        for (dominio.Zombie zombie : zombies) {
+            zombie.dibujar(g); // Dibuja cada zombie en el gráfico
         }
     }
 }
+
