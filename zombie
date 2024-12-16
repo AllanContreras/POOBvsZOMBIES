@@ -1,3 +1,4 @@
+package dominio;
 import java.awt.Image;
 import java.awt.Graphics;
 import javax.swing.ImageIcon;
@@ -5,27 +6,42 @@ import javax.swing.Timer;
 import java.io.File;
 import java.awt.image.BufferedImage;
 
-
 /**
- * Representa un zombie en el juego.
- * Gestiona la posición, movimiento, salud y animación del zombie.
+ * Representa a un zombie en el juego. Gestiona la posición, movimiento, salud y animación del zombie.
+ *
+ * <p>El zombie tiene una posición en un tablero (en términos de coordenadas x e y),
+ * y puede moverse a través del tablero. Su apariencia se gestiona mediante un conjunto
+ * de fotogramas de animación. La salud del zombie puede disminuir al recibir daño, y
+ * el zombie muere cuando su salud llega a cero.</p>
+ *
+ * <p>La clase también gestiona la animación del zombie, su movimiento en el tablero y
+ * la actualización de su posición lógica (en términos de fila y columna).</p>
  */
 public class Zombie {
     private int x, y; // Coordenadas en píxeles
-    private int velocidadX, velocidadY;
-    private ImageIcon[] framesAnimacion;
-    private String nombre;
-    private int salud;
-    private int frameActual = 0;
-    private int contadorAnimacion = 0;
-    public static final int ALTURA = 50;
-    public static final int ANCHO = 50; // Para calcular columna
-    private Timer timerMovimiento;
+    private int velocidadX, velocidadY; // Velocidad de movimiento
+    private ImageIcon[] framesAnimacion; // Frames de animación
+    private String nombre; // Nombre del zombie
+    private int salud; // Salud del zombie
+    private int frameActual = 0; // Frame actual de la animación
+    private int contadorAnimacion = 0; // Contador para cambiar el frame de animación
+    public static final int ALTURA = 50; // Altura del zombie en píxeles
+    public static final int ANCHO = 50; // Ancho del zombie en píxeles
+    private Timer timerMovimiento; // Temporizador para controlar el movimiento del zombie
 
-    // Nuevos atributos
+    // Nuevos atributos para manejar la lógica en el tablero
     private int fila; // Fila lógica en el tablero
     private int columna; // Columna lógica en el tablero
 
+    /**
+     * Constructor de la clase Zombie.
+     * Inicializa el zombie con su nombre, salud y posición inicial.
+     *
+     * @param nombre Nombre del zombie (por ejemplo, "ZombieBasico", "zombieCono", etc.)
+     * @param salud Salud inicial del zombie.
+     * @param x Coordenada X inicial del zombie.
+     * @param y Coordenada Y inicial del zombie.
+     */
     public Zombie(String nombre, int salud, int x, int y) {
         this.nombre = nombre;
         this.x = x;
@@ -38,7 +54,11 @@ public class Zombie {
         cargarFramesAnimacion();
     }
 
-    private void cargarFramesAnimacion() {
+    /**
+     * Carga los frames de animación según el tipo de zombie.
+     * Cada tipo de zombie tiene un conjunto diferente de imágenes para la animación.
+     */
+    public void cargarFramesAnimacion() {
         framesAnimacion = new ImageIcon[4];
         String rutaBase = "src\\IMG\\";
         String rutaFrames;
@@ -70,6 +90,7 @@ public class Zombie {
                 rutaFrames = rutaBase + "zombie_frame%d.png";
         }
 
+        // Cargar los frames de animación
         for (int i = 0; i < framesAnimacion.length; i++) {
             try {
                 String rutaFrame = String.format(rutaFrames, i);
@@ -108,6 +129,12 @@ public class Zombie {
         }
     }
 
+    /**
+     * Inicia el movimiento del zombie en el tablero con un temporizador.
+     *
+     * @param delay El intervalo de tiempo entre cada movimiento (en milisegundos).
+     * @param anchoPanel El ancho del panel para determinar cuándo el zombie ha llegado al final.
+     */
     public void iniciarMovimiento(int delay, int anchoPanel) {
         timerMovimiento = new Timer(delay, e -> {
             mover();
@@ -118,12 +145,19 @@ public class Zombie {
         timerMovimiento.start();
     }
 
+    /**
+     * Detiene el movimiento del zombie, deteniendo el temporizador asociado.
+     */
     public void detenerMovimiento() {
         if (timerMovimiento != null) {
             timerMovimiento.stop();
         }
     }
 
+    /**
+     * Mueve al zombie según su velocidad y actualiza su animación.
+     * También actualiza la fila y columna lógica en el tablero.
+     */
     public void mover() {
         x += velocidadX;
         y += velocidadY;
@@ -137,21 +171,40 @@ public class Zombie {
         actualizarFilaColumna();
     }
 
+    /**
+     * Actualiza la fila y columna lógica del zombie basándose en su posición actual.
+     */
     private void actualizarFilaColumna() {
         this.fila = y / ALTURA; // Asume celdas cuadradas
         this.columna = x / ANCHO; // Basado en posición x
     }
 
+    /**
+     * Verifica si el zombie ha llegado al final del panel (cuando la coordenada x es menor o igual a 0).
+     *
+     * @param anchoPanel El ancho del panel.
+     * @return true si el zombie ha llegado al final, false en caso contrario.
+     */
     public boolean haLlegadoAlFinal(int anchoPanel) {
         return x <= 0;
     }
 
+    /**
+     * Dibuja al zombie en el gráfico de la interfaz de usuario.
+     *
+     * @param g El objeto Graphics para dibujar en el panel.
+     */
     public void dibujar(Graphics g) {
         if (framesAnimacion != null && framesAnimacion[frameActual] != null) {
             g.drawImage(framesAnimacion[frameActual].getImage(), x, y, null);
         }
     }
 
+    /**
+     * Reduce la salud del zombie al recibir daño. Si la salud llega a 0, el zombie muere.
+     *
+     * @param daño La cantidad de daño que recibe el zombie.
+     */
     public void recibirDaño(int daño) {
         salud -= daño;
         if (salud <= 0) {
@@ -159,15 +212,14 @@ public class Zombie {
         }
     }
 
+    /**
+     * Método que se llama cuando el zombie muere.
+     */
     private void morir() {
         System.out.println("¡El zombi ha muerto!");
     }
 
-    public void setVelocidadX(int velocidad) {
-        this.velocidadX = velocidad;
-    }
-
-    // Métodos para obtener fila, columna e icono
+    // Métodos de acceso (getters y setters)
     public int getFila() {
         return fila;
     }
@@ -187,10 +239,19 @@ public class Zombie {
     public int getY() {
         return y;
     }
+    public void setVelocidadX(int velocidad) {
+        this.velocidadX = velocidad;
+    }
 
     public int getSalud() {
         return salud;
     }
+
+    public void setSalud(int salud) {
+        this.salud = salud;
+    }
+}
+
 
     public void setSalud(int salud) {
         this.salud = salud;
