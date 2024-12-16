@@ -1,3 +1,5 @@
+package dominio;
+
 import javax.swing.ImageIcon;
 import java.awt.Image;
 import java.awt.Graphics;
@@ -5,22 +7,68 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 
+/**
+ * Representa una planta en el juego. Las plantas disparan proyectiles a los zombis
+ * y tienen animaciones que se actualizan con el tiempo.
+ */
 public class Planta {
+
+    /** Imagen base de la planta */
     private ImageIcon imagenBase;
+
+    /** Frames de animación de la planta */
     private ImageIcon[] framesAnimacion;
-    private int x, y; // Posición de la planta
-    private int tiempoDisparo; // Intervalo entre disparos
-    private int contadorTiempo; // Contador para controlar el tiempo de disparo
-    private List<Proyectil> proyectiles; // Lista de proyectiles disparados
-    private int frameActual; // Frame actual para la animación
-    private int contadorAnimacion;// Controla la velocidad de la animación
+
+    /** Posición X de la planta */
+    private int x;
+
+    /** Posición Y de la planta */
+    private int y;
+
+    /** Intervalo de tiempo entre disparos */
+    private int tiempoDisparo;
+
+    /** Contador para controlar el tiempo entre disparos */
+    private int contadorTiempo;
+
+    /** Lista de proyectiles disparados por la planta */
+    private List<dominio.Proyectil> proyectiles;
+
+    /** Frame actual para la animación de la planta */
+    private int frameActual;
+
+    /** Contador para controlar la velocidad de la animación */
+    private int contadorAnimacion;
+
+    /** Ruta de la imagen de la planta */
     private String rutaImagen;
+
+    /** Velocidad de animación de la planta */
+    private int velocidadAnimacion;
+
+    /** Vida de la planta */
     private int vida;
+
+    /** Daño que causa el proyectil de la planta */
     private int dañoProyectil;
+
+    /** Costo en sol de la planta */
     private int costoSol;
 
-    public Planta(String rutaBase, int vida, int dañoProyectil, int costoSol) {
-        // Cargar imagen base
+    /** Tipo de la planta (ej. "rápida", "lenta") */
+    private String tipoPlanta;
+
+    /**
+     * Constructor de la clase Planta.
+     *
+     * @param rutaBase Ruta de la imagen base de la planta
+     * @param vida Vida de la planta
+     * @param dañoProyectil Daño del proyectil disparado por la planta
+     * @param costoSol Costo en sol de la planta
+     * @param velocidadAnimacion Velocidad de animación de la planta
+     * @param tipoPlanta Tipo de la planta (ej. "rápida", "lenta")
+     */
+    public Planta(String rutaBase, int vida, int dañoProyectil, int costoSol, int velocidadAnimacion, String tipoPlanta) {
         this.rutaImagen = rutaBase;
         this.imagenBase = new ImageIcon(rutaBase);
         Image img = imagenBase.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
@@ -29,7 +77,7 @@ public class Planta {
         this.x = x;
         this.y = y;
         this.tiempoDisparo = tiempoDisparo;
-        this.contadorTiempo = 0; // Inicializar el contador de tiempo
+        this.contadorTiempo = 0;
         this.proyectiles = new ArrayList<>();
         this.frameActual = 0;
         this.contadorAnimacion = 0;
@@ -37,94 +85,207 @@ public class Planta {
         this.vida = vida;
         this.dañoProyectil = dañoProyectil;
         this.costoSol = costoSol;
-        //this.frames = cargarFramesAnimacion(rutaImagen);
+        this.velocidadAnimacion = velocidadAnimacion;
+        this.tipoPlanta = tipoPlanta;
 
-        // Cargar frames de animación específicos para cada tipo de planta
         cargarFramesAnimacion(rutaBase);
     }
 
+    /**
+     * Obtiene la velocidad de animación de la planta.
+     *
+     * @return La velocidad de animación
+     */
+    public int getVelocidadAnimacion() {
+        return velocidadAnimacion;
+    }
+
+    /**
+     * Establece la velocidad de animación de la planta.
+     *
+     * @param velocidadAnimacion La velocidad de animación
+     */
+    public void setVelocidadAnimacion(int velocidadAnimacion) {
+        this.velocidadAnimacion = velocidadAnimacion;
+    }
+
+    /**
+     * Carga los frames de animación de la planta.
+     *
+     * @param rutaBase Ruta base de la imagen de la planta
+     */
     private void cargarFramesAnimacion(String rutaBase) {
-        framesAnimacion = new ImageIcon[4]; // Ajusta según necesites
+        framesAnimacion = new ImageIcon[4];
         for (int i = 0; i < framesAnimacion.length; i++) {
-            // Modificar para usar la ruta base y tipo de planta
             String rutaFrame = rutaBase.replace(".png", "_frame" + i + ".png");
             try {
                 ImageIcon frame = new ImageIcon(rutaFrame);
                 Image img = frame.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
                 framesAnimacion[i] = new ImageIcon(img);
             } catch (Exception e) {
-                // Si no encuentra frames específicos, usa la imagen base
                 framesAnimacion[i] = imagenBase;
             }
         }
     }
 
-    // Actualiza la planta (disparo y animación)
-    public void actualizar(List<Zombie> zombies,int anchoPantalla, int altoPantalla) {
-        contadorTiempo++; // Incrementa el contador de tiempo
+    /**
+     * Actualiza la planta, gestionando el disparo de proyectiles y la animación.
+     *
+     * @param zombies Lista de zombis en el juego
+     * @param anchoPantalla Ancho de la pantalla
+     * @param altoPantalla Alto de la pantalla
+     */
+    public void actualizar(List<dominio.Zombie> zombies, int anchoPantalla, int altoPantalla) {
+        contadorTiempo++;
 
-        // Disparar continuamente si el contador ha llegado al intervalo de tiempo
         if (contadorTiempo >= tiempoDisparo) {
-            disparar(); // Dispara una vez cada intervalo de tiempo
-            contadorTiempo = 0; // Reinicia el contador de tiempo para el siguiente disparo
+            disparar();
+            contadorTiempo = 0;
         }
 
-        // Actualizar proyectiles
         proyectiles.forEach(Proyectil::mover);
-        proyectiles.removeIf(p -> p.fueraDePantalla(anchoPantalla, altoPantalla)); // Elimina proyectiles fuera de la pantalla
+        proyectiles.removeIf(p -> p.fueraDePantalla(anchoPantalla, altoPantalla));
 
-        // Actualizar animación
         contadorAnimacion++;
-        if (contadorAnimacion >= 10) { // Controla la velocidad de cambio de frames
+        if (contadorAnimacion >= velocidadAnimacion) {
             frameActual = (frameActual + 1) % framesAnimacion.length;
             contadorAnimacion = 0;
         }
-        for (Iterator<Proyectil> iterator = proyectiles.iterator(); iterator.hasNext();) {
-            Proyectil proyectil = iterator.next();
-            for (Zombie zombie : zombies) {
+
+        if (tipoPlanta.equals("rápida")) {
+            int nuevaVelocidad = calcularVelocidadProyectil(frameActual);
+            for (dominio.Proyectil proyectil : proyectiles) {
+                proyectil.setVelocidadX(nuevaVelocidad);
+            }
+        }
+
+        for (Iterator<dominio.Proyectil> iterator = proyectiles.iterator(); iterator.hasNext();) {
+            dominio.Proyectil proyectil = iterator.next();
+            for (dominio.Zombie zombie : zombies) {
                 if (proyectil.colisionaCon(zombie)) {
-                    iterator.remove(); // Elimina el proyectil después de golpear
+                    iterator.remove();
                     break;
                 }
             }
         }
-
     }
 
+    /**
+     * Calcula la velocidad del proyectil en función del frame actual.
+     *
+     * @param frameActual El frame actual de la animación
+     * @return La velocidad calculada del proyectil
+     */
+    private int calcularVelocidadProyectil(int frameActual) {
+        switch (frameActual) {
+            case 0:
+                return 5;
+            case 1:
+                return 8;
+            case 2:
+                return 29;
+            default:
+                return 5;
+        }
+    }
 
+    /**
+     * Realiza un disparo de proyectil.
+     */
     private void disparar() {
-        // Asegúrate de ajustar las coordenadas de acuerdo con el tamaño de la planta
-        String rutaImagen = "src\\IMG\\proyectil.png"; // Ruta de la imagen del proyectil
-        int daño = 10; // Valor del daño que causa el proyectil
-        Proyectil proyectil = new Proyectil(x + 50, y + 20, 5, 10, daño, rutaImagen); // Llamada al constructor con todos los parámetros
-        proyectiles.add(proyectil); // Agrega el proyectil a la lista de proyectiles
+        String rutaImagen = "src\\IMG\\proyectil.png";
+        int daño = 10;
+        dominio.Proyectil proyectil = new dominio.Proyectil(x + 50, y + 20, 5, 10, daño, rutaImagen);
+        proyectiles.add(proyectil);
     }
 
-
+    /**
+     * Dibuja la planta y sus proyectiles en el gráfico.
+     *
+     * @param g El objeto Graphics utilizado para dibujar
+     */
     public void dibujar(Graphics g) {
-        // Dibujar la planta (animación)
         g.drawImage(framesAnimacion[frameActual].getImage(), x, y, null);
-
-        // Dibujar los proyectiles
         proyectiles.forEach(p -> p.dibujar(g));
     }
 
-    public List<Proyectil> getProyectiles() {
+    /**
+     * Obtiene la lista de proyectiles disparados por la planta.
+     *
+     * @return Lista de proyectiles
+     */
+    public List<dominio.Proyectil> getProyectiles() {
         return proyectiles;
     }
 
+    /**
+     * Obtiene la imagen base de la planta.
+     *
+     * @return Imagen base de la planta
+     */
     public ImageIcon getImagen() {
         return imagenBase;
     }
 
+    /**
+     * Obtiene la vida de la planta.
+     *
+     * @return La vida de la planta
+     */
+    public int getVida() {
+        return vida;
+    }
+
+    /**
+     * Obtiene el daño del proyectil disparado por la planta.
+     *
+     * @return Daño del proyectil
+     */
+    public int getDañoProyectil() {
+        return dañoProyectil;
+    }
+
+    /**
+     * Obtiene el costo en sol de la planta.
+     *
+     * @return Costo en sol de la planta
+     */
+    public int getCostoSol() {
+        return costoSol;
+    }
+
+    /**
+     * Obtiene el tipo de la planta.
+     *
+     * @return Tipo de la planta
+     */
+    public String getTipoPlanta() {
+        return tipoPlanta;
+    }
+
+    /**
+     * Obtiene los frames de animación de la planta.
+     *
+     * @return Array de frames de animación
+     */
     public ImageIcon[] getFrames() {
         return framesAnimacion;
     }
 
+    /**
+     * Obtiene la posición X de la planta.
+     *
+     * @return Posición X de la planta
+     */
     public int getX() {
         return x;
     }
 
+    /**
+     * Obtiene la posición Y de la planta.
+     *
+     * @return Posición Y de la planta
+     */
     public int getY() {
         return y;
     }
