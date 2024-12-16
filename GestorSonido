@@ -1,46 +1,81 @@
+package dominio;
+
 import javax.sound.sampled.*;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * La clase GestorSonido se encarga de gestionar la reproducción de sonidos en el juego.
+ * Permite reproducir, pausar, reanudar y detener sonidos de forma continua o una sola vez.
+ * Utiliza la API de Java Sound para gestionar los archivos de audio.
+ *
+ * <p>Esta clase facilita la interacción con archivos de audio, permitiendo que se reproduzcan en
+ * bucle, se detengan o se pongan en pausa sin interrumpir completamente la ejecución del programa.</p>
+ */
 public class GestorSonido {
-    private Clip audioClip;
+    private Clip audioClip; // Clip para la reproducción de audio
 
+    /**
+     * Reproduce un archivo de audio en bucle.
+     *
+     * <p>El sonido se reproduce de manera continua hasta que se detenga manualmente. Si el archivo
+     * de audio no se puede cargar, se muestra un mensaje de error.</p>
+     *
+     * @param rutaArchivo La ruta del archivo de audio a reproducir.
+     */
     public void reproducirSonido(String rutaArchivo) {
         try {
-            File archivoAudio = new File(rutaArchivo);
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(archivoAudio);
-            audioClip = AudioSystem.getClip();
-            audioClip.open(audioStream);
-            audioClip.loop(Clip.LOOP_CONTINUOUSLY);
-            audioClip.start();
+            File archivoAudio = new File(rutaArchivo); // Crear archivo de audio
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(archivoAudio); // Leer el archivo de audio
+            audioClip = AudioSystem.getClip(); // Crear un clip de audio
+            audioClip.open(audioStream); // Abrir el clip con el audio
+            audioClip.loop(Clip.LOOP_CONTINUOUSLY); // Reproducir en bucle
+            audioClip.start(); // Iniciar la reproducción
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            // En caso de error, imprimir el stack trace y mostrar un mensaje de error
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "No se pudo cargar el archivo de audio.");
         }
     }
-    private Clip currentClip;
-    private long clipTime;
 
+    private Clip currentClip; // Clip actual para pausar y reanudar el audio
+    private long clipTime; // Posición del clip en microsegundos para reanudar
+
+    /**
+     * Pausa la reproducción del audio actual, guardando su posición para reanudarla más tarde.
+     *
+     * <p>Si el audio está en ejecución, se detendrá temporalmente y se guardará su posición
+     * para poder continuar desde ese punto cuando se reanude.</p>
+     */
     public void pausarSonido() {
         if (currentClip != null && currentClip.isRunning()) {
-            clipTime = currentClip.getMicrosecondPosition();
-            currentClip.stop();
+            clipTime = currentClip.getMicrosecondPosition(); // Guardar la posición actual
+            currentClip.stop(); // Detener la reproducción
         }
     }
 
+    /**
+     * Reanuda la reproducción del audio desde la posición donde se pausó.
+     *
+     * <p>Si el audio fue pausado previamente, continuará desde la última posición guardada.</p>
+     */
     public void reanudarSonido() {
         if (currentClip != null) {
-            currentClip.setMicrosecondPosition(clipTime);
-            currentClip.start();
+            currentClip.setMicrosecondPosition(clipTime); // Restablecer la posición guardada
+            currentClip.start(); // Reanudar la reproducción
         }
     }
 
-
+    /**
+     * Detiene la reproducción del sonido y cierra el clip de audio.
+     *
+     * <p>Detiene el audio si está en reproducción y cierra el recurso del clip de audio para liberar memoria.</p>
+     */
     public void detenerSonido() {
         if (audioClip != null && audioClip.isRunning()) {
-            audioClip.stop();
-            audioClip.close();
+            audioClip.stop(); // Detener la reproducción
+            audioClip.close(); // Cerrar el clip
         }
     }
 }
