@@ -1,14 +1,34 @@
+package presentacion;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
+/**
+ * Clase BienvenidaJuego representa una ventana de bienvenida para el juego "Poob vs Zombis".
+ * Permite al usuario ingresar su nombre y comenzar el juego o salir de la aplicación.
+ */
 public class BienvenidaJuego extends JFrame {
 
+    /**
+     * Campo de texto para que el usuario ingrese su nombre.
+     */
     public JTextField nombreField;
+
+    /**
+     * Botón que permite al usuario iniciar el juego.
+     */
     public JButton comenzarButton;
+
+    /**
+     * Botón que permite al usuario salir de la aplicación.
+     */
     private JButton salirButton;
 
+    /**
+     * Constructor de la clase BienvenidaJuego.
+     * Inicializa la ventana con los componentes necesarios, como el fondo, los botones
+     * y el campo de texto para el nombre del jugador.
+     */
     public BienvenidaJuego() {
         setTitle("Bienvenida - Poob vs Zombis");
         setSize(400, 300);
@@ -55,12 +75,9 @@ public class BienvenidaJuego extends JFrame {
         nombrePanel.add(nombreLabel);
         nombrePanel.add(nombreField);
 
-
-
         // Añadir los sub-paneles al contenedorPanel
         contenedorPanel.add(salirPanel);
         contenedorPanel.add(nombrePanel);
-       ;
 
         // Botón de comenzar en la parte inferior del fondoPanel
         comenzarButton = new JButton("Comenzar Juego");
@@ -68,7 +85,6 @@ public class BienvenidaJuego extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String nombreJugador = nombreField.getText().trim();
-
 
                 if (nombreJugador.isEmpty()) {
                     JOptionPane.showMessageDialog(BienvenidaJuego.this,
@@ -90,6 +106,10 @@ public class BienvenidaJuego extends JFrame {
         add(fondoPanel);
     }
 
+    /**
+     * Método principal que inicia la ventana de bienvenida.
+     * @param args Argumentos de línea de comandos (no se utilizan).
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             BienvenidaJuego bienvenida = new BienvenidaJuego();
