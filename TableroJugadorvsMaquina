@@ -1,0 +1,394 @@
+package presentacion;
+
+import dominio.GestorPlantas;
+import dominio.GestorSonido;
+import dominio.GestorZombies;
+import dominio.PoobvsZombies;
+import dominio.Planta;
+import dominio.Zombie;
+
+import dominio.GestorSonido;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.io.ObjectOutputStream;
+import java.util.List;
+/**
+ * Representa la interfaz gráfica del tablero de juego donde el jugador interactúa con las plantas
+ * y los zombies en un juego de "Poob vs Zombies".
+ */
+public class TableroJugadorvsMaquina extends JFrame {
+    /** Matriz de celdas que representa el tablero del juego */
+    public JPanel[][] celdas;
+
+    /** Gestor de los zombies en el tablero */
+    private GestorZombies gestorZombies;
+
+    /** Gestor de las plantas en el tablero */
+    private GestorPlantas gestorPlantas;
+
+    /** Gestor de los sonidos del juego */
+    private GestorSonido gestorSonido;
+
+    /** Instancia principal de la lógica del juego */
+    private PoobvsZombies PoobvsZombies;
+
+    /** Lista de personajes disponibles para colocar en el tablero */
+    private List<String> personajesDisponibles;
+
+    /** Panel para mostrar la selección de personajes */
+    private JPanel panelPersonajes;
+
+    /** Estado que indica si una planta ha sido seleccionada */
+    private boolean plantaSeleccionada = false;
+
+    /** Tipo de planta seleccionada por el jugador */
+    private String tipoPlantaSeleccionada = null;
+
+
+    public TableroJugadorvsMaquina(int filas, int columnas, List<String> personajes) {
+        try {
+            this.personajesDisponibles = personajes;
+            // Inicialización de PoobvsZombies, que maneja la interfaz y la lógica
+            PoobvsZombies = new PoobvsZombies(this, filas, columnas, personajesDisponibles);
+
+            configurarVentana(filas, columnas);
+            inicializarComponentes(filas, columnas);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al inicializar el tablero: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void configurarVentana(int filas, int columnas) {
+        setTitle("Tablero Jugador vs Maquina");
+        setSize(800, 900);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+    }
+
+    public void inicializarComponentes(int filas, int columnas) {
+        celdas = new JPanel[filas][columnas];
+        setLayout(new BorderLayout(10, 10)); // Añade espacios entre componentes
+
+
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
+                celdas[i][j] = new JPanel();
+                celdas[i][j].setLayout(new BorderLayout());
+                celdas[i][j].setPreferredSize(new Dimension(50, 50));
+                celdas[i][j].setBorder(BorderFactory.createLineBorder(Color.BLACK));
+
+                JLabel fondo = new JLabel();
+                fondo.setOpaque(true);
+                fondo.setBackground(Color.GREEN);
+                celdas[i][j].add(fondo);
+
+                add(celdas[i][j]);
+            }
+        }
+
+        // Crear el panel de la cuadrícula
+        JPanel gridPanel = new JPanel(new GridLayout(filas, columnas));
+        gridPanel.setPreferredSize(new Dimension(800, 500)); // Tamaño explícito
+
+        // Inicializar las celdas con sus características
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
+                celdas[i][j] = new JPanel();
+                celdas[i][j].setLayout(new BorderLayout()); // Para apilar componentes
+                celdas[i][j].setPreferredSize(new Dimension(50, 50));
+                celdas[i][j].setBorder(BorderFactory.createLineBorder(Color.BLACK));
+
+
+                // Fondo verde en cada celda
+                JLabel fondo = new JLabel();
+                fondo.setOpaque(true);
+                fondo.setBackground(Color.GREEN);
+                celdas[i][j].add(fondo);
+
+                // Agregar componentes de Zombies y Plantas (vacíos por ahora)
+                JLabel zombie = new JLabel();
+                celdas[i][j].add(zombie);
+                JLabel planta = new JLabel();
+                celdas[i][j].add(planta);
+
+                gridPanel.add(celdas[i][j]); // IMPORTANTE: Agregar al gridPanel, no directamente al frame
+            }
+        }
+
+
+
+        // Añadir los paneles a la ventana
+        add(gridPanel, BorderLayout.CENTER);
+
+
+
+
+
+
+        // Inicializar gestores (de zombies y plantas)
+        colocarPodadoras();
+        gestorSonido = new GestorSonido();
+        gestorZombies = new GestorZombies(celdas, this);
+        gestorPlantas = new GestorPlantas(celdas, this);
+        PoobvsZombies = new PoobvsZombies(this, filas, columnas, personajesDisponibles);
+
+        // Crear panel principal desde GestorUI
+        JPanel mainPanel = PoobvsZombies.crearPanelPrincipal(celdas);
+
+        // Asegurarse de que el tablero está correctamente agregado
+        setContentPane(mainPanel);
+        mainPanel.revalidate();
+        mainPanel.repaint();
+
+        gestorZombies.generarZombiesIniciales(filas);
+
+        reproducirSonidoFondo();
+
+        setVisible(true);
+    }
+
+
+    private void colocarPodadoras() {
+        System.out.println("Colocando podadora en la primera fila, primera columna");
+
+        // Limpiar cualquier componente existente en la celda
+        celdas[0][0].removeAll();
+
+        // Crear un JLabel con la imagen de la podadora
+        JLabel podadoraLabel = new JLabel();
+        ImageIcon iconoOriginal = new ImageIcon("src\\IMG\\Podadora1.png");
+        Image imagenEscalada = iconoOriginal.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+        podadoraLabel.setIcon(new ImageIcon(imagenEscalada));
+        podadoraLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        podadoraLabel.setVerticalAlignment(SwingConstants.CENTER);
+
+        // Cambiar fondo de la celda para pruebas (opcional)
+        celdas[0][0].setBackground(Color.RED);
+
+        // Añadir la podadora a la celda
+        celdas[0][0].add(podadoraLabel);
+        celdas[0][0].revalidate(); // Actualiza el diseño
+        celdas[0][0].repaint();    // Redibuja la celda
+    }
+
+
+    public void guardarJuego() {
+        try {
+            // Lógica para guardar el estado del juego
+            System.out.println("Juego guardado exitosamente.");
+            JOptionPane.showMessageDialog(this, "El juego ha sido guardado correctamente.",
+                    "Guardar Juego", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            System.err.println("Error al guardar el juego: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al guardar el juego: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    public void pausarJuego() {
+        // Detiene las animaciones y disparos de las plantas
+        gestorPlantas.pausar();
+
+        // Detiene la generación de zombies y su movimiento
+        gestorZombies.pausar();
+    }
+    public void reanudarJuego() {
+        // Reanuda las animaciones y disparos de las plantas
+        gestorPlantas.reanudar();
+
+        // Reanuda la generación de zombies y su movimiento
+        gestorZombies.reanudar();
+    }
+
+
+
+
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+
+        for (int i = 0; i < celdas.length; i++) {
+            for (int j = 0; j < celdas[i].length; j++) {
+                JLabel zombieLabel = (JLabel) celdas[i][j].getComponent(0);
+                ImageIcon iconoZombie = gestorZombies.obtenerIconoZombie(i, j);
+
+                if (iconoZombie != null) {
+                    zombieLabel.setIcon(iconoZombie);
+                    celdas[i][j].revalidate();
+                    celdas[i][j].repaint();
+                } else {
+                    zombieLabel.setIcon(null); // Limpiar si no hay zombi
+                }
+            }
+        }
+    }
+
+
+
+    @Override
+    public void dispose() {
+        gestorZombies.detener();
+        gestorPlantas.detener();
+        gestorSonido.detenerSonido();
+        super.dispose();
+    }
+
+    // Métodos de manejo de eventos y colocación de plantas
+    public void colocarPlanta(int fila, int columna) {
+        // Verificación de estado
+        System.out.println("Estado al colocar planta:");
+        System.out.println("plantaSeleccionada: " + PoobvsZombies.isPlantaSeleccionada());
+        System.out.println("tipoPlantaSeleccionada: " + PoobvsZombies.getTipoPlantaSeleccionada());
+
+        // Verificar si la columna es la primera (índice 0)
+        if (columna == 0) {
+            JOptionPane.showMessageDialog(this, "No puedes colocar plantas en la primera columna. Esta columna está reservada para las podadoras.",
+                    "Columna Protegida", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        if (PoobvsZombies.isPlantaSeleccionada() && PoobvsZombies.getTipoPlantaSeleccionada() != null) {
+            String tipoPlanta = PoobvsZombies.getTipoPlantaSeleccionada();
+            Planta planta = crearPlantaSegunTipo(tipoPlanta);
+
+            if (planta == null) {
+                System.out.println("Error: No se pudo crear la planta.");
+                return;
+            }
+
+            gestorPlantas.agregarPlanta(fila, columna, planta);
+            PoobvsZombies.resetearSeleccion();
+        } else {
+            System.out.println("Error: Planta no seleccionada o tipo es null.");
+        }
+    }
+    public void reiniciarEstadoSeleccionPlanta() {
+        plantaSeleccionada = false;
+        tipoPlantaSeleccionada = null;
+        setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        PoobvsZombies.reiniciarResaltadoPersonajes();
+    }
+
+
+
+
+    // Método para agregar la planta a la celda
+    private void agregarPlantaACelda(int fila, int columna, Planta planta) {
+        JPanel celda = celdas[fila][columna];
+        JLabel plantaLabel = new JLabel(planta.getImagen());
+        celda.add(plantaLabel, BorderLayout.CENTER);
+        celda.revalidate();
+        celda.repaint();
+    }
+
+    // Crear planta según tipo
+    private Planta crearPlantaSegunTipo(String tipo) {
+        String rutaImagen = obtenerRutaImagenPersonaje(tipo);
+        if (rutaImagen == null) {
+            System.out.println("Error: No se encontró la ruta de imagen para el personaje: " + tipo);
+            return null;
+        }
+
+        switch (tipo) {
+            case "Girasol":
+                return new Planta(rutaImagen, 50, 0, 50,1000,"normal");
+            case "Evolver":
+                return new Planta(rutaImagen, 50, 20, 50,19990,"rápida");
+            case "Nuez":
+                return new Planta(rutaImagen, 200, 0, 50,1000,"normal");
+            case "PapaMina":
+                return new Planta(rutaImagen, 75, 20, 50,1000,"normal");
+            case "EciPlanta":
+                return new Planta(rutaImagen, 100, 15, 75,1000,"normal");
+            case "Planta":
+            default:
+                return new Planta(rutaImagen, 100, 10, 50,1000,"normal");
+        }
+    }
+
+    // Obtener ruta de imagen según el tipo de planta
+    private String obtenerRutaImagenPersonaje(String personaje) {
+        switch (personaje) {
+            case "Girasol":
+                return "src\\IMG\\Girasol.png";
+            case "Evolver":
+                return "src\\IMG\\Evolver.png";
+            case "Planta":
+                return "src\\IMG\\Planta.png";
+            case "Nuez":
+                return "src\\IMG\\Nuez.png";
+            case "PapaMina":
+                return "src\\IMG\\papaMina.png";
+            case "EciPlanta":
+                return "src\\IMG\\EciPlanta.png";
+            default:
+                return null;
+        }
+    }
+
+    // Método para manejar la selección de planta
+    public void manejarSeleccionPlanta(String personaje, JPanel panel) {
+        plantaSeleccionada = true;
+        tipoPlantaSeleccionada = personaje;
+        PoobvsZombies.resaltarPanelSeleccionado(panel);
+        setCursor(new Cursor(Cursor.HAND_CURSOR));
+        System.out.println("Planta seleccionada: " + tipoPlantaSeleccionada);
+    }
+
+
+    // Método para reiniciar la selección
+    public void reiniciarSeleccionPlanta() {
+        plantaSeleccionada = false;
+        tipoPlantaSeleccionada = null;
+    }
+    public void eliminarPlanta(int fila, int columna) {
+        // Verificar si hay una planta en la celda
+        if (gestorPlantas.hayPlantaEnCelda(fila, columna)) {
+            // Eliminar la planta del gestor de plantas
+            gestorPlantas.removerPlanta(fila, columna);
+
+            // Limpiar visualmente la celda
+            JPanel celda = celdas[fila][columna];
+            celda.removeAll(); // Eliminar todos los componentes de la celda
+
+            // Restaurar el fondo verde original
+            JLabel fondo = new JLabel();
+            fondo.setOpaque(true);
+            fondo.setBackground(Color.GREEN);
+            celda.add(fondo);
+
+            // Añadir de nuevo los labels para zombies y plantas
+            JLabel zombie = new JLabel();
+            celda.add(zombie);
+            JLabel planta = new JLabel();
+            celda.add(planta);
+
+            // Actualizar visualmente la celda
+            celda.revalidate();
+            celda.repaint();
+
+            // Mensaje de confirmación (opcional)
+            JOptionPane.showMessageDialog(this, "Planta eliminada exitosamente.",
+                    "Eliminar Planta", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            // Mensaje si no hay planta en la celda
+            JOptionPane.showMessageDialog(this, "No hay una planta en esta celda.",
+                    "Eliminar Planta", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+
+
+    private void reproducirSonidoFondo() {
+        // Suponiendo que hay un método en GestorSonido que maneja la reproducción de sonidos
+        try {
+            gestorSonido.reproducirSonido("src\\sounds\\Dia.wav");
+        } catch (Exception e) {
+            System.err.println("Error al reproducir el sonido de fondo: " + e.getMessage());
+        }
+    }
+}
